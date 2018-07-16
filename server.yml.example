@@ -1,0 +1,23 @@
+# 主机地址
+host: 0.0.0.0
+
+# 端口号
+port: 18080
+
+# API服务站点
+api_website: "http://api.smartbot.site/"
+
+# 机器人token
+token: "TELEGRAM_BOT_TOKEN"
+
+# 资产符号
+symbol: "SYS"
+
+# 充值地址
+address: "address"
+
+# 语言包路径
+languages: "languages"
+
+# BoltDB路径
+boltdb_path: "master.db"
