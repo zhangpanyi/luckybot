@@ -84,7 +84,7 @@ func (handler *MainMenuHandler) Handle(bot *methods.BotExt, r *history.History, 
 func (handler *MainMenuHandler) route(bot *methods.BotExt, query *types.CallbackQuery) Handler {
 	// 创建红包
 	if strings.HasPrefix(query.Data, "/new/") {
-		return nil
+		return new(NewHandler)
 	}
 
 	// 使用说明

@@ -16,5 +16,19 @@
     "lng_deposit_say": "📩 充值\n\n请将 **%s** 转入以下地址：\n*%s*\n\n备注信息(MEMO)：\n*%d*\n\n充值须知：\n`1. 备注错误或不填将无法到账\n2. 充值金额只保留小数点后两位`",
     "lng_rate_say": "🌟 参与评级\n\n非常感谢！如果你觉得这个机器人不错，请点击下面的链接给它评级。\n[http://telegram.me/storebot?start=%s](http://telegram.me/storebot?start=%s)",
     "lng_share_say": "💖 我要推荐\n\n感谢对此机器人的支持，请将以下链接分享给其他用户或者群组：\n[http://telegram.me/%s?start=%d](http://telegram.me/%s?start=%d)",
-    "lng_usage_say": "❓ 帮助说明\n\n欢迎使用电报红包机器人，如果在使用过程中遇到任何问题，请联系管理员解决。"
+    "lng_usage_say": "❓ 帮助说明\n\n欢迎使用电报红包机器人，如果在使用过程中遇到任何问题，请联系管理员解决。",
+    "lng_new_choose_type": "🎁 发红包(*1*/4)\n\n请您选择红包类型，普通红包群组每人将收到固定金额，随机红包每人收到的金额随机。",
+    "lng_new_rand": "随机红包",
+    "lng_new_equal": "普通红包",
+    "lng_new_cancel": "取消红包",
+    "lng_new_set_amount": "🎁 发红包(*2*/4)\n\n- 红包类型：%s\n\n请您在下一条消息中回复红包%s，支持小数点后两位。\n\n您目前 **%s** 余额：*%s*",
+    "lng_new_set_amount_answer": "请您在下一条消息中回复红包%s，支持小数点后两位。",
+    "lng_new_total_amount": "总金额",
+    "lng_new_unit_amount": "单个金额",
+    "lng_new_set_amount_error": "很抱歉😅，红包金额输入错误。只能输入正数，并且只支持小数点后两位。",
+    "lng_new_set_amount_no_asset": "很抱歉😅，您的账户余额不足，请重新输入红包金额。\n\n您目前 *%s* 余额：*%s*",
+    "lng_new_set_number": "🎁 发红包(*3*/4)\n\n请您在下一条消息中回复红包个数，单个红包金额不可少于 *0.01* 个。\n\n- 红包类型：%s\n- %s：*%s %s*",
+    "lng_new_set_number_answer": "请您在下一条消息中回复红包个数。",
+    "lng_new_set_number_error": "很抱歉😅，红包个数输入错误。只能输入正整数，并且单个红包金额不可低于*0.01*元。",
+    "lng_new_set_number_not_enough": "很抱歉😅，您的账户余额不足，请重新输入红包个数。\n\n您目前 *%s* 余额：*%s*"
 }
