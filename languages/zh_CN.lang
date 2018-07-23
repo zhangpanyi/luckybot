@@ -21,14 +21,18 @@
     "lng_new_rand": "随机红包",
     "lng_new_equal": "普通红包",
     "lng_new_cancel": "取消红包",
-    "lng_new_set_amount": "🎁 发红包(*2*/4)\n\n- 红包类型：%s\n\n请您在下一条消息中回复红包%s，支持小数点后两位。\n\n您目前 **%s** 余额：*%s*",
+    "lng_new_set_amount": "🎁 发红包(*2*/4)\n\n请您在下一条消息中回复红包%s，支持小数点后两位。\n\n- 红包类型：%s\n\n您目前 **%s** 余额：*%s*",
     "lng_new_set_amount_answer": "请您在下一条消息中回复红包%s，支持小数点后两位。",
-    "lng_new_total_amount": "总金额",
+    "lng_new_total_amount": "红包总额",
     "lng_new_unit_amount": "单个金额",
     "lng_new_set_amount_error": "很抱歉😅，红包金额输入错误。只能输入正数，并且只支持小数点后两位。",
     "lng_new_set_amount_no_asset": "很抱歉😅，您的账户余额不足，请重新输入红包金额。\n\n您目前 *%s* 余额：*%s*",
     "lng_new_set_number": "🎁 发红包(*3*/4)\n\n请您在下一条消息中回复红包个数，单个红包金额不可少于 *0.01* 个。\n\n- 红包类型：%s\n- %s：*%s %s*",
     "lng_new_set_number_answer": "请您在下一条消息中回复红包个数。",
     "lng_new_set_number_error": "很抱歉😅，红包个数输入错误。只能输入正整数，并且单个红包金额不可低于*0.01*元。",
-    "lng_new_set_number_not_enough": "很抱歉😅，您的账户余额不足，请重新输入红包个数。\n\n您目前 *%s* 余额：*%s*"
+    "lng_new_set_number_not_enough": "很抱歉😅，您的账户余额不足，请重新输入红包个数。\n\n您目前 *%s* 余额：*%s*",
+    "lng_new_set_memo": "🎁 发红包(*4*/4)\n\n很好👍，请您在下一条消息中回复红包留言。\n\n- 红包类型：%s\n- 资金类型：*%s*\n- %s：*%s %s*\n- 红包数量：*%d* 个",
+    "lng_new_set_memo_answer": "请您在下一条消息中回复红包留言。",
+    "lng_new_set_memo_error": "很抱歉😅，留言内容必须是文本消息，并且不得超过*%d*个字符。",
+    "lng_new_benediction": "恭喜发财，大吉大利"
 }
