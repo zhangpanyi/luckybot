@@ -12,6 +12,7 @@
 *.out
 
 logs
+vendor
 server.yml
 
 *.db

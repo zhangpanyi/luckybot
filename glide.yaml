@@ -1,0 +1,19 @@
+package: github.com/zhangpanyi/tg-lucky-money
+import:
+- package: github.com/boltdb/bolt
+  version: v1.3.1
+- package: github.com/fsnotify/fsnotify
+  version: v1.4.7
+- package: github.com/gorilla/mux
+  version: v1.6.2
+- package: github.com/vrecan/death
+  version: v3.0.1
+- package: github.com/zhangpanyi/basebot
+  subpackages:
+  - history
+  - logger
+  - telegram/methods
+  - telegram/types
+  - telegram/updater
+- package: gopkg.in/yaml.v2
+  version: v2.2.1
