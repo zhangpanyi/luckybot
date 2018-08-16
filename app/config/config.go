@@ -14,14 +14,15 @@ import (
 
 // 服务配置
 type Serve struct {
-	Host       string `yaml:"host"`        // 主机地址
-	Port       int    `yaml:"port"`        // HTTP端口
-	APIWebsite string `yaml:"api_website"` // API服务站点
-	Token      string `yaml:"token"`       // 机器人token
-	Symbol     string `yaml:"symbol"`      // 资产符号
-	Address    string `yaml:"address"`     // 充值地址
-	BolTDBPath string `yaml:"boltdb_path"` // BoltDB路径
-	Languages  string `yaml:"languages"`   // 语言配置路径
+	Host          string `yaml:"host"`            // 主机地址
+	Port          int    `yaml:"port"`            // HTTP端口
+	APIWebsite    string `yaml:"api_website"`     // API服务站点
+	Token         string `yaml:"token"`           // 机器人token
+	Symbol        string `yaml:"symbol"`          // 资产符号
+	Address       string `yaml:"address"`         // 充值地址
+	BolTDBPath    string `yaml:"boltdb_path"`     // BoltDB路径
+	Languages     string `yaml:"languages"`       // 语言配置路径
+	MaxMessageLen int    `yaml:"max_message_len"` // 最大留言长度
 }
 
 // 配置解析器

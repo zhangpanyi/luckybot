@@ -31,8 +31,10 @@
     "lng_new_set_number_answer": "请您在下一条消息中回复红包个数。",
     "lng_new_set_number_error": "很抱歉😅，红包个数输入错误。只能输入正整数，并且单个红包金额不可低于*0.01*元。",
     "lng_new_set_number_not_enough": "很抱歉😅，您的账户余额不足，请重新输入红包个数。\n\n您目前 *%s* 余额：*%s*",
-    "lng_new_set_memo": "🎁 发红包(*4*/4)\n\n很好👍，请您在下一条消息中回复红包留言。\n\n- 红包类型：%s\n- 资金类型：*%s*\n- %s：*%s %s*\n- 红包数量：*%d* 个",
-    "lng_new_set_memo_answer": "请您在下一条消息中回复红包留言。",
-    "lng_new_set_memo_error": "很抱歉😅，留言内容必须是文本消息，并且不得超过*%d*个字符。",
-    "lng_new_benediction": "恭喜发财，大吉大利"
+    "lng_new_set_message": "🎁 发红包(*4*/4)\n\n很好👍，请您在下一条消息中回复红包留言。\n\n- 红包类型：%s\n- 资金类型：*%s*\n- %s：*%s %s*\n- 红包数量：*%d* 个",
+    "lng_new_set_message_answer": "请您在下一条消息中回复红包留言。",
+    "lng_new_set_message_error": "很抱歉😅，留言内容必须是文本消息，并且不得超过*%d*个字符。",
+    "lng_new_benediction": "恭喜发财，大吉大利",
+    "lng_new_failed": "很抱歉😅，创建红包过程出现问题，请稍后重试。",
+    "lng_new_created": "👍 红包已创建，快点击发送红包按钮转发给朋友吧。如果超过24小时内未被领取，将被自动退回。"
 }

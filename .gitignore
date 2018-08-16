@@ -18,4 +18,6 @@ server.yml
 *.db
 *.exe
 *.lock
-tg-lucky-money
+*.yml
+*.yaml
+luckymoney

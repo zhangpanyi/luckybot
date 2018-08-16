@@ -1,2 +1,2 @@
-# tg-lucky-money
+# luckymoney
 Telegram通用红包机器人

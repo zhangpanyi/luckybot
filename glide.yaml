@@ -1,4 +1,4 @@
-package: github.com/zhangpanyi/tg-lucky-money
+package: github.com/zhangpanyi/luckymoney
 import:
 - package: github.com/boltdb/bolt
   version: v1.3.1

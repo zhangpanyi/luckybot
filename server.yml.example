@@ -4,8 +4,14 @@ host: 0.0.0.0
 # 端口号
 port: 18080
 
+# 语言包路径
+languages: "languages"
+
+# BoltDB路径
+boltdb_path: "master.db"
+
 # API服务站点
-api_website: "http://api.smartbot.site/"
+api_website: "http://tg.docauthor.com/"
 
 # 机器人token
 token: "TELEGRAM_BOT_TOKEN"
@@ -16,8 +22,5 @@ symbol: "SYS"
 # 充值地址
 address: "address"
 
-# 语言包路径
-languages: "languages"
-
-# BoltDB路径
-boltdb_path: "master.db"
+# 最大留言长度
+max_message_len: 32

@@ -4,9 +4,9 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/tg-lucky-money/app/logic/context"
-	"github.com/zhangpanyi/tg-lucky-money/app/logic/handlers"
-	"github.com/zhangpanyi/tg-lucky-money/app/storage"
+	"github.com/zhangpanyi/luckymoney/app/logic/context"
+	"github.com/zhangpanyi/luckymoney/app/logic/handlers"
+	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
 // 机器人更新
@@ -27,13 +27,11 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 		fromID = update.CallbackQuery.From.ID
 		chatType = update.CallbackQuery.Message.Chat.Type
 	} else {
-		logger.Debugf("Lucky money bot update, update_id: %v", update.UpdateID)
 		return
 	}
 	if chatType != types.ChatPrivate {
 		return
 	}
-	logger.Debugf("Lucky money bot update, update_id: %v, user_id: %v", update.UpdateID, fromID)
 
 	// 获取操作记录
 	r, err := context.GetRecord(uint32(fromID))

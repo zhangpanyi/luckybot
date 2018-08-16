@@ -8,8 +8,8 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/tg-lucky-money/app/config"
-	"github.com/zhangpanyi/tg-lucky-money/app/storage"
+	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
 // 消息处理器

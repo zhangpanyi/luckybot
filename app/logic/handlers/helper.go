@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/zhangpanyi/tg-lucky-money/app/config"
+	"github.com/zhangpanyi/luckymoney/app/config"
 )
 
 // 语言翻译

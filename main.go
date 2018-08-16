@@ -8,11 +8,11 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/vrecan/death"
 	"github.com/zhangpanyi/basebot/logger"
-	"github.com/zhangpanyi/tg-lucky-money/app/config"
-	"github.com/zhangpanyi/tg-lucky-money/app/logic"
-	"github.com/zhangpanyi/tg-lucky-money/app/logic/context"
-	"github.com/zhangpanyi/tg-lucky-money/app/poller"
-	"github.com/zhangpanyi/tg-lucky-money/app/storage"
+	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/logic"
+	"github.com/zhangpanyi/luckymoney/app/logic/context"
+	"github.com/zhangpanyi/luckymoney/app/poller"
+	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
 func main() {

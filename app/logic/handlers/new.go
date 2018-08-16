@@ -7,9 +7,11 @@ import (
 	"strings"
 
 	"github.com/zhangpanyi/basebot/history"
+	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/tg-lucky-money/app/config"
+	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
 // 匹配类型
@@ -48,10 +50,10 @@ var (
 
 // 红包信息
 type luckyMoneys struct {
-	typ    string // 红包类型
-	amount uint32 // 红包金额
-	number uint32 // 红包个数
-	memo   string // 红包备注
+	typ     string // 红包类型
+	amount  uint32 // 红包金额
+	number  uint32 // 红包个数
+	message string // 红包留言
 }
 
 // 红包类型转字符串
@@ -103,7 +105,7 @@ func (handler *NewHandler) Handle(bot *methods.BotExt, r *history.History, updat
 		info.amount = uint32(amount * 100)
 		number, _ := strconv.Atoi(result[3])
 		info.number = uint32(number)
-		handler.replyEnterMemo(bot, r, &info, update)
+		handler.replyEnterMessage(bot, r, &info, update)
 		return
 	}
 
@@ -297,7 +299,7 @@ func (handler *NewHandler) handleEnterNumber(bot *methods.BotExt, r *history.His
 	r.Clear()
 	info.number = uint32(number)
 	update.CallbackQuery.Data += enterNumber + "/"
-	handler.replyEnterMemo(bot, r, info, update)
+	handler.replyEnterMessage(bot, r, info, update)
 }
 
 // 回复输入红包数量
@@ -337,71 +339,58 @@ func (handler *NewHandler) replyEnterNumber(bot *methods.BotExt, r *history.Hist
 }
 
 // 处理输入红包留言
-func (handler *NewHandler) handleEnterMemo(bot *methods.BotExt, r *history.History,
-	info *luckyMoneys, update *types.Update, memo string) {
+func (handler *NewHandler) handleEnterMessage(bot *methods.BotExt, r *history.History,
+	info *luckyMoneys, update *types.Update, message string) {
 
-	// 	// 生成菜单列表
-	// 	query := update.CallbackQuery
-	// 	fromID := query.From.ID
+	// 处理错误
+	query := update.CallbackQuery
+	fromID := query.From.ID
+	handlerError := func(reply string) {
+		r.Pop()
+		bot.AnswerCallbackQuery(query, "", false, "", 0)
+		markup := makeBaseMenus(fromID, query.Data)
+		bot.SendMessage(fromID, reply, true, markup)
+		return
+	}
 
-	// 	// 处理错误
-	// 	handlerError := func(reply string) {
-	// 		r.Pop()
-	// 		bot.AnswerCallbackQuery(query, "", false, "", 0)
-	// 		markup := makeBaseMenus(fromID, query.Data)
-	// 		bot.SendMessage(fromID, reply, true, markup)
-	// 		return
-	// 	}
+	// 检查留言长度
+	serve := config.GetServe()
+	if len(message) == 0 || len(message) > serve.MaxMessageLen {
+		reply := fmt.Sprintf(tr(fromID, "lng_new_set_message_error"),
+			serve.MaxMessageLen)
+		handlerError(reply)
+		return
+	}
 
-	// 	// 检查留言长度
-	// 	dynamicCfg := config.GetDynamic()
-	// 	if len(memo) == 0 || len(memo) > dynamicCfg.MaxMemoLength {
-	// 		reply := fmt.Sprintf(tr(fromID, "lng_priv_give_set_memo_error"),
-	// 			dynamicCfg.MaxMemoLength)
-	// 		handlerError(reply)
-	// 		return
-	// 	}
+	// 处理生成红包
+	info.message = message
+	_, err := handler.handleGenerateLuckyMoney(fromID, query.From.FirstName, info)
+	if err != nil {
+		logger.Warnf("Failed to create lucky money, %v", err)
+		handlerError(tr(fromID, "lng_new_failed"))
+		return
+	}
 
-	// 	// 处理生成红包
-	// 	info.memo = memo
-	// 	luckyMoney, err := handler.handleGenerateLuckyMoney(fromID, query.From.FirstName, info)
-	// 	if err != nil {
-	// 		logger.Warnf("Failed to create lucky money, %v", err)
-	// 		handlerError(tr(fromID, "lng_priv_give_create_failed"))
-	// 		return
-	// 	}
+	// 删除已有键盘
+	markup := methods.ReplyKeyboardRemove{
+		RemoveKeyboard: true,
+	}
 
-	// 	// 删除已有键盘
-	// 	markup := methods.ReplyKeyboardRemove{
-	// 		RemoveKeyboard: true,
-	// 	}
-
-	// 	// 回复红包内容
-	// 	r.Clear()
-	// 	reply := tr(fromID, "lng_priv_give_created")
-	// 	reply = fmt.Sprintf(reply, bot.UserName, luckyMoney.ID, bot.UserName, luckyMoney.ID)
-	// 	bot.AnswerCallbackQuery(query, "", false, "", 0)
-	// 	bot.SendMessageDisableWebPagePreview(fromID, reply, true, &markup)
-
-	// 	// 回复输入群组ID
-	// 	menus := [...]methods.InlineKeyboardButton{
-	// 		methods.InlineKeyboardButton{
-	// 			Text:         tr(fromID, "lng_chat_enter_chat_id"),
-	// 			CallbackData: fmt.Sprintf("/chatid/%d/", luckyMoney.ID),
-	// 		},
-	// 	}
-	// 	reply = tr(fromID, "lng_priv_give_created_enter_chat_id")
-	// 	bot.SendMessage(fromID, reply, true, methods.MakeInlineKeyboardMarkupAuto(menus[:], 1))
+	// 回复红包内容
+	r.Clear()
+	reply := tr(fromID, "lng_new_created")
+	bot.AnswerCallbackQuery(query, "", false, "", 0)
+	bot.SendMessageDisableWebPagePreview(fromID, reply, true, &markup)
 }
 
 // 回复输入红包留言
-func (handler *NewHandler) replyEnterMemo(bot *methods.BotExt, r *history.History, info *luckyMoneys,
+func (handler *NewHandler) replyEnterMessage(bot *methods.BotExt, r *history.History, info *luckyMoneys,
 	update *types.Update) {
 
 	// 处理输入留言
 	back, err := r.Back()
 	if err == nil && back.Message != nil {
-		handler.handleEnterMemo(bot, r, info, update, back.Message.Text)
+		handler.handleEnterMessage(bot, r, info, update, back.Message.Text)
 		return
 	}
 
@@ -422,88 +411,88 @@ func (handler *NewHandler) replyEnterMemo(bot *methods.BotExt, r *history.Histor
 		amount = tr(fromID, "lng_new_unit_amount")
 	}
 	serveCfg := config.GetServe()
-	reply := tr(fromID, "lng_new_set_memo")
+	reply := tr(fromID, "lng_new_set_message")
 	reply = fmt.Sprintf(reply, luckyMoneysTypeToString(fromID, info.typ), serveCfg.Symbol,
 		amount, fmt.Sprintf("%.2f", float64(info.amount)/100.0), serveCfg.Symbol, info.number)
 	bot.SendMessage(fromID, reply, true, markup)
-	bot.AnswerCallbackQuery(query, tr(fromID, "lng_new_set_memo_answer"), false, "", 0)
+	bot.AnswerCallbackQuery(query, tr(fromID, "lng_new_set_message_answer"), false, "", 0)
 }
 
-// // 处理生成红包
-// func (handler *GiveHandler) handleGenerateLuckyMoney(userID int64, firstName string,
-// 	info *luckyMoneys) (*storage.LuckyMoney, error) {
+// 处理生成红包
+func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName string,
+	info *luckyMoneys) (*storage.LuckyMoney, error) {
+	return nil, nil
+	// 	// 冻结资金
+	// 	amount := info.amount
+	// 	if info.typ == equalLuckyMoney {
+	// 		amount = info.amount * info.number
+	// 	}
+	// 	assetStorage := storage.AssetStorage{}
+	// 	info.asset = storage.GetAssetSymbol(info.asset)
+	// 	err := assetStorage.FrozenAsset(userID, info.asset, amount)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	logger.Errorf("Frozen asset, user_id: %v, asset: %v, amount: %v",
+	// 		userID, info.asset, amount)
 
-// 	// 冻结资金
-// 	amount := info.amount
-// 	if info.typ == equalLuckyMoney {
-// 		amount = info.amount * info.number
-// 	}
-// 	assetStorage := storage.AssetStorage{}
-// 	info.asset = storage.GetAssetSymbol(info.asset)
-// 	err := assetStorage.FrozenAsset(userID, info.asset, amount)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	logger.Errorf("Frozen asset, user_id: %v, asset: %v, amount: %v",
-// 		userID, info.asset, amount)
+	// 	// 生成红包
+	// 	var luckyMoneyArr []int
+	// 	if info.typ == randLuckyMoney {
+	// 		luckyMoneyArr, err = core.Generate(amount, info.number)
+	// 		if err != nil {
+	// 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
 
-// 	// 生成红包
-// 	var luckyMoneyArr []int
-// 	if info.typ == randLuckyMoney {
-// 		luckyMoneyArr, err = core.Generate(amount, info.number)
-// 		if err != nil {
-// 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
+	// 			// 解冻资金
+	// 			if err = assetStorage.UnfreezeAsset(userID, info.asset, amount); err != nil {
+	// 				logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
+	// 					userID, info.asset, amount)
+	// 			}
+	// 			return nil, err
+	// 		}
+	// 	} else {
+	// 		luckyMoneyArr = make([]int, 0, info.number)
+	// 		for i := 0; i < int(info.number); i++ {
+	// 			luckyMoneyArr = append(luckyMoneyArr, int(info.amount))
+	// 		}
+	// 	}
 
-// 			// 解冻资金
-// 			if err = assetStorage.UnfreezeAsset(userID, info.asset, amount); err != nil {
-// 				logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
-// 					userID, info.asset, amount)
-// 			}
-// 			return nil, err
-// 		}
-// 	} else {
-// 		luckyMoneyArr = make([]int, 0, info.number)
-// 		for i := 0; i < int(info.number); i++ {
-// 			luckyMoneyArr = append(luckyMoneyArr, int(info.amount))
-// 		}
-// 	}
+	// 	// 保存红包信息
+	// 	luckyMoney := storage.LuckyMoney{
+	// 		SenderID:   userID,
+	// 		SenderName: firstName,
+	// 		Asset:      info.asset,
+	// 		Amount:     info.amount,
+	// 		Number:     info.number,
+	// 		Memo:       info.memo,
+	// 		Lucky:      info.typ == randLuckyMoney,
+	// 		Timestamp:  time.Now().UTC().Unix(),
+	// 	}
+	// 	if info.typ == equalLuckyMoney {
+	// 		luckyMoney.Value = info.amount
+	// 	}
+	// 	luckyMoneyStorage := storage.LuckyMoneyStorage{}
+	// 	newLuckyMoney, err := luckyMoneyStorage.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
+	// 	if err != nil {
+	// 		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
 
-// 	// 保存红包信息
-// 	luckyMoney := storage.LuckyMoney{
-// 		SenderID:   userID,
-// 		SenderName: firstName,
-// 		Asset:      info.asset,
-// 		Amount:     info.amount,
-// 		Number:     info.number,
-// 		Memo:       info.memo,
-// 		Lucky:      info.typ == randLuckyMoney,
-// 		Timestamp:  time.Now().UTC().Unix(),
-// 	}
-// 	if info.typ == equalLuckyMoney {
-// 		luckyMoney.Value = info.amount
-// 	}
-// 	luckyMoneyStorage := storage.LuckyMoneyStorage{}
-// 	newLuckyMoney, err := luckyMoneyStorage.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
-// 	if err != nil {
-// 		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
+	// 		// 解冻资金
+	// 		if err = assetStorage.UnfreezeAsset(userID, info.asset, amount); err != nil {
+	// 			logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
+	// 				userID, info.asset, amount)
+	// 		}
+	// 		return nil, err
+	// 	}
+	// 	logger.Errorf("Generate lucky money, id: %v, user_id: %v, asset: %v, amount: %v",
+	// 		newLuckyMoney.ID, userID, info.asset, amount)
 
-// 		// 解冻资金
-// 		if err = assetStorage.UnfreezeAsset(userID, info.asset, amount); err != nil {
-// 			logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
-// 				userID, info.asset, amount)
-// 		}
-// 		return nil, err
-// 	}
-// 	logger.Errorf("Generate lucky money, id: %v, user_id: %v, asset: %v, amount: %v",
-// 		newLuckyMoney.ID, userID, info.asset, amount)
+	// 	// 过期计时
+	// 	timer.AddLuckyMoney(luckyMoney.ID, luckyMoney.Timestamp)
 
-// 	// 过期计时
-// 	timer.AddLuckyMoney(luckyMoney.ID, luckyMoney.Timestamp)
+	// 	// 记录操作历史
+	// 	desc := fmt.Sprintf("您发放了红包(id: *%d*), 花费*%.2f* *%s*", luckyMoney.ID,
+	// 		float64(amount)/100.0, luckyMoney.Asset)
+	// 	models.InsertHistory(userID, desc)
 
-// 	// 记录操作历史
-// 	desc := fmt.Sprintf("您发放了红包(id: *%d*), 花费*%.2f* *%s*", luckyMoney.ID,
-// 		float64(amount)/100.0, luckyMoney.Asset)
-// 	models.InsertHistory(userID, desc)
-
-// 	return newLuckyMoney, nil
-// }
+	// 	return newLuckyMoney, nil
+}
