@@ -11,8 +11,8 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/botcasino/app/logic/core"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/logic/algo"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
@@ -451,7 +451,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	// 生成红包
 	var luckyMoneyArr []int
 	if info.typ == randLuckyMoney {
-		luckyMoneyArr, err = core.Generate(amount, info.number)
+		luckyMoneyArr, err = algo.Generate(amount, info.number)
 		if err != nil {
 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
 

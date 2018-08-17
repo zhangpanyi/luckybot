@@ -28,7 +28,37 @@ func replyNone(bot *methods.BotExt, query *types.InlineQuery) {
 
 // 回复红包列表
 func replyLuckyMoneyList(bot *methods.BotExt, query *types.InlineQuery) {
-	replyNone(bot, query)
+	// 筛选查询
+	offset, err := strconv.Atoi(query.Offset)
+	if len(query.Offset) > 0 && err != nil {
+		replyNone(bot, query)
+		return
+	}
+	if offset > 0 {
+		replyNone(bot, query)
+		return
+	}
+
+	// 查询信息
+	handler := storage.LuckyMoneyStorage{}
+	ids, err := handler.AllLuckyMoney(query.From.ID, uint(offset), 5)
+	if err != nil {
+		replyNone(bot, query)
+		return
+	}
+
+	// 查询红包信息
+	result := make([]methods.InlineQueryResult, 0)
+	for i := len(ids) - 1; i >= 0; i-- {
+		luckyMoney, received, err := handler.GetLuckyMoney(ids[i])
+		if err != nil || luckyMoney.Received == luckyMoney.Amount {
+			continue
+		}
+		result = append(result, makeLuckyMoneyInfo(luckyMoney, received, i))
+	}
+
+	// 生成红包信息
+	bot.AnswerInlineQuery(query, int32(offset+len(result)), 0, result)
 }
 
 // 回复红包信息
@@ -59,7 +89,7 @@ func replyLuckyMoneyInfo(bot *methods.BotExt, query *types.InlineQuery) {
 
 	// 生成红包信息
 	result := make([]methods.InlineQueryResult, 0)
-	result = append(result, makeLuckyMoneyInfo(luckyMoney, received, 1))
+	result = append(result, makeLuckyMoneyInfo(luckyMoney, received, 0))
 	bot.AnswerInlineQuery(query, int32(offset+len(result)), 0, result)
 }
 
