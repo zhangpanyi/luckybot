@@ -84,7 +84,7 @@ func makeLuckyMoneyInfo(luckyMoney *storage.LuckyMoney, received uint32, idx int
 	result.Description = fmt.Sprintf(reply,
 		luckyMoneysTypeToString(0, tag),
 		luckyMoney.ID,
-		fmt.Sprintf("%.2f", float64(luckyMoney.Received)/100.0),
+		fmt.Sprintf("%.2f", float64(luckyMoney.Amount-luckyMoney.Received)/100.0),
 		fmt.Sprintf("%.2f", float64(luckyMoney.Amount)/100.0),
 		serveCfg.Symbol,
 		received,
