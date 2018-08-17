@@ -10,6 +10,7 @@ type Asset struct {
 // 红包信息
 type LuckyMoney struct {
 	ID         uint64 `json:"id"`          // 红包ID
+	SN         string `json:"sn"`          // 唯一编号
 	GroupID    int64  `json:"group_id"`    // 群组ID
 	MessageID  int32  `json:"message_id"`  // 消息ID
 	SenderID   int64  `json:"sneder_id"`   // 发送者
@@ -21,7 +22,7 @@ type LuckyMoney struct {
 	Lucky      bool   `json:"lucky"`       // 是否随机
 	Value      uint32 `json:"value"`       // 单个价值
 	Active     bool   `json:"active"`      // 是否激活
-	Memo       string `json:"memo"`        // 红包留言
+	Message    string `json:"message"`     // 红包留言
 	Timestamp  int64  `json:"timestamp"`   // 时间戳
 }
 

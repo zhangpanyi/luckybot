@@ -5,11 +5,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/zhangpanyi/basebot/history"
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
+	"github.com/zhangpanyi/botcasino/app/logic/core"
 	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 )
@@ -364,7 +366,7 @@ func (handler *NewHandler) handleEnterMessage(bot *methods.BotExt, r *history.Hi
 
 	// 处理生成红包
 	info.message = message
-	_, err := handler.handleGenerateLuckyMoney(fromID, query.From.FirstName, info)
+	data, err := handler.handleGenerateLuckyMoney(fromID, query.From.FirstName, info)
 	if err != nil {
 		logger.Warnf("Failed to create lucky money, %v", err)
 		handlerError(tr(fromID, "lng_new_failed"))
@@ -372,15 +374,24 @@ func (handler *NewHandler) handleEnterMessage(bot *methods.BotExt, r *history.Hi
 	}
 
 	// 删除已有键盘
-	markup := methods.ReplyKeyboardRemove{
+	remove := methods.ReplyKeyboardRemove{
 		RemoveKeyboard: true,
 	}
+	bot.SendMessage(fromID, tr(fromID, "lng_new_waiting"), false, &remove)
 
 	// 回复红包内容
 	r.Clear()
 	reply := tr(fromID, "lng_new_created")
+	reply = fmt.Sprintf(reply, bot.UserName)
+	menus := [...]methods.InlineKeyboardButton{
+		methods.InlineKeyboardButton{
+			Text:              tr(fromID, "lng_send_luckymoney"),
+			SwitchInlineQuery: data.SN,
+		},
+	}
 	bot.AnswerCallbackQuery(query, "", false, "", 0)
-	bot.SendMessageDisableWebPagePreview(fromID, reply, true, &markup)
+	markup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
+	bot.SendMessageDisableWebPagePreview(fromID, reply, true, markup)
 }
 
 // 回复输入红包留言
@@ -403,6 +414,7 @@ func (handler *NewHandler) replyEnterMessage(bot *methods.BotExt, r *history.His
 		},
 	}
 	markup := methods.MakeReplyKeyboardMarkup(menus[:], 1)
+	markup.OneTimeKeyboard = true
 
 	// 提示输入红包留言
 	r.Clear().Push(update)
@@ -421,78 +433,70 @@ func (handler *NewHandler) replyEnterMessage(bot *methods.BotExt, r *history.His
 // 处理生成红包
 func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName string,
 	info *luckyMoneys) (*storage.LuckyMoney, error) {
-	return nil, nil
-	// 	// 冻结资金
-	// 	amount := info.amount
-	// 	if info.typ == equalLuckyMoney {
-	// 		amount = info.amount * info.number
-	// 	}
-	// 	assetStorage := storage.AssetStorage{}
-	// 	info.asset = storage.GetAssetSymbol(info.asset)
-	// 	err := assetStorage.FrozenAsset(userID, info.asset, amount)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	logger.Errorf("Frozen asset, user_id: %v, asset: %v, amount: %v",
-	// 		userID, info.asset, amount)
 
-	// 	// 生成红包
-	// 	var luckyMoneyArr []int
-	// 	if info.typ == randLuckyMoney {
-	// 		luckyMoneyArr, err = core.Generate(amount, info.number)
-	// 		if err != nil {
-	// 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
+	// 冻结资金
+	amount := info.amount
+	if info.typ == equalLuckyMoney {
+		amount = info.amount * info.number
+	}
+	serveCfg := config.GetServe()
+	assetStorage := storage.AssetStorage{}
+	err := assetStorage.FrozenAsset(userID, serveCfg.Symbol, amount)
+	if err != nil {
+		return nil, err
+	}
+	logger.Errorf("Frozen asset, user_id: %v, asset: %v, amount: %v",
+		userID, serveCfg.Symbol, amount)
 
-	// 			// 解冻资金
-	// 			if err = assetStorage.UnfreezeAsset(userID, info.asset, amount); err != nil {
-	// 				logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
-	// 					userID, info.asset, amount)
-	// 			}
-	// 			return nil, err
-	// 		}
-	// 	} else {
-	// 		luckyMoneyArr = make([]int, 0, info.number)
-	// 		for i := 0; i < int(info.number); i++ {
-	// 			luckyMoneyArr = append(luckyMoneyArr, int(info.amount))
-	// 		}
-	// 	}
+	// 生成红包
+	var luckyMoneyArr []int
+	if info.typ == randLuckyMoney {
+		luckyMoneyArr, err = core.Generate(amount, info.number)
+		if err != nil {
+			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
 
-	// 	// 保存红包信息
-	// 	luckyMoney := storage.LuckyMoney{
-	// 		SenderID:   userID,
-	// 		SenderName: firstName,
-	// 		Asset:      info.asset,
-	// 		Amount:     info.amount,
-	// 		Number:     info.number,
-	// 		Memo:       info.memo,
-	// 		Lucky:      info.typ == randLuckyMoney,
-	// 		Timestamp:  time.Now().UTC().Unix(),
-	// 	}
-	// 	if info.typ == equalLuckyMoney {
-	// 		luckyMoney.Value = info.amount
-	// 	}
-	// 	luckyMoneyStorage := storage.LuckyMoneyStorage{}
-	// 	newLuckyMoney, err := luckyMoneyStorage.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
-	// 	if err != nil {
-	// 		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
+			// 解冻资金
+			if err = assetStorage.UnfreezeAsset(userID, serveCfg.Symbol, amount); err != nil {
+				logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
+					userID, serveCfg.Symbol, amount)
+			}
+			return nil, err
+		}
+	} else {
+		luckyMoneyArr = make([]int, 0, info.number)
+		for i := 0; i < int(info.number); i++ {
+			luckyMoneyArr = append(luckyMoneyArr, int(info.amount))
+		}
+	}
 
-	// 		// 解冻资金
-	// 		if err = assetStorage.UnfreezeAsset(userID, info.asset, amount); err != nil {
-	// 			logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
-	// 				userID, info.asset, amount)
-	// 		}
-	// 		return nil, err
-	// 	}
-	// 	logger.Errorf("Generate lucky money, id: %v, user_id: %v, asset: %v, amount: %v",
-	// 		newLuckyMoney.ID, userID, info.asset, amount)
+	// 保存红包信息
+	luckyMoney := storage.LuckyMoney{
+		SenderID:   userID,
+		SenderName: firstName,
+		Asset:      serveCfg.Symbol,
+		Amount:     info.amount,
+		Number:     info.number,
+		Message:    info.message,
+		Lucky:      info.typ == randLuckyMoney,
+		Timestamp:  time.Now().UTC().Unix(),
+	}
+	if info.typ == equalLuckyMoney {
+		luckyMoney.Value = info.amount
+	}
+	luckyMoneyStorage := storage.LuckyMoneyStorage{}
+	data, err := luckyMoneyStorage.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
+	if err != nil {
+		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
 
-	// 	// 过期计时
-	// 	timer.AddLuckyMoney(luckyMoney.ID, luckyMoney.Timestamp)
+		// 解冻资金
+		if err = assetStorage.UnfreezeAsset(userID, serveCfg.Symbol, amount); err != nil {
+			logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
+				userID, serveCfg.Symbol, amount)
+		}
+		return nil, err
+	}
+	logger.Errorf("Generate lucky money, id: %v, user_id: %v, asset: %v, amount: %v",
+		data.ID, userID, serveCfg.Symbol, amount)
 
-	// 	// 记录操作历史
-	// 	desc := fmt.Sprintf("您发放了红包(id: *%d*), 花费*%.2f* *%s*", luckyMoney.ID,
-	// 		float64(amount)/100.0, luckyMoney.Asset)
-	// 	models.InsertHistory(userID, desc)
-
-	// 	return newLuckyMoney, nil
+	return data, nil
 }
