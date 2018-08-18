@@ -24,3 +24,6 @@ address: "address"
 
 # 最大留言长度
 max_message_len: 32
+
+# 红包缩略图URL(64*64)
+thumb_url: "https://s1.ax1x.com/2018/08/18/PWzPhT.png"

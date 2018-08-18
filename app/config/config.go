@@ -23,6 +23,7 @@ type Serve struct {
 	BolTDBPath    string `yaml:"boltdb_path"`     // BoltDB路径
 	Languages     string `yaml:"languages"`       // 语言配置路径
 	MaxMessageLen int    `yaml:"max_message_len"` // 最大留言长度
+	ThumbURL      string `yaml:"thumb_url"`       // 红包缩略图URL
 }
 
 // 配置解析器

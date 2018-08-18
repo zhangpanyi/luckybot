@@ -92,6 +92,7 @@ func replyLuckyMoneyInfo(bot *methods.BotExt, query *types.InlineQuery) {
 
 // 生成红包信息
 func makeLuckyMoneyInfo(luckyMoney *models.LuckyMoney, received uint32, idx int) methods.InlineQueryResult {
+	serveCfg := config.GetServe()
 	result := methods.InlineQueryResultArticle{}
 	result.ID = strconv.Itoa(idx)
 	result.Title = location.Format(luckyMoney.Timestamp)
@@ -100,16 +101,17 @@ func makeLuckyMoneyInfo(luckyMoney *models.LuckyMoney, received uint32, idx int)
 		ParseMode:             methods.ParseModeMarkdown,
 		DisableWebPagePreview: true,
 	}
-	result.ThumbURL = "https://s1.ax1x.com/2018/08/18/PWzPhT.png"
-	result.ThumbWidth = 64
-	result.ThumbHeight = 64
+	if len(serveCfg.ThumbURL) > 0 {
+		result.ThumbWidth = 64
+		result.ThumbHeight = 64
+		result.ThumbURL = serveCfg.ThumbURL
+	}
 
 	tag := equalLuckyMoney
 	if luckyMoney.Lucky {
 		tag = randLuckyMoney
 	}
 
-	serveCfg := config.GetServe()
 	reply := tr(0, "lng_luckymoney_info")
 	result.Description = fmt.Sprintf(reply,
 		luckyMoneysTypeToString(0, tag),
