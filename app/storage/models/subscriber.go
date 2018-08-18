@@ -1,23 +1,27 @@
-package storage
+package models
 
 import (
 	"strconv"
 
 	"github.com/boltdb/bolt"
+	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
-// 订户存储
-type SubscriberStorage struct {
+// 订户模型
+type SubscriberModel struct {
 }
 
 // 获取订阅者
-func (*SubscriberStorage) GetSubscribers(botID int64) ([]int64, error) {
+func (*SubscriberModel) GetSubscribers(botID int64) ([]int64, error) {
 	var subscribers []int64
-	err := blotDB.View(func(tx *bolt.Tx) error {
+	err := storage.DB.View(func(tx *bolt.Tx) error {
 		key := strconv.FormatInt(botID, 10)
-		bucket, err := getBucketIfExists(tx, "subscriber", key)
-		if err != nil && err != ErrNoBucket {
-			return err
+		bucket, err := storage.GetBucketIfExists(tx, "subscriber", key)
+		if err != nil {
+			if err != storage.ErrNoBucket {
+				return err
+			}
+			return nil
 		}
 
 		subscribers = make([]int64, 0, bucket.Stats().KeyN)
@@ -38,10 +42,10 @@ func (*SubscriberStorage) GetSubscribers(botID int64) ([]int64, error) {
 }
 
 // 添加订阅者
-func (*SubscriberStorage) AddSubscriber(botID, userID int64) error {
-	return blotDB.Batch(func(tx *bolt.Tx) error {
+func (*SubscriberModel) AddSubscriber(botID, userID int64) error {
+	return storage.DB.Batch(func(tx *bolt.Tx) error {
 		key := strconv.FormatInt(botID, 10)
-		bucket, err := ensureBucketExists(tx, "subscriber", key)
+		bucket, err := storage.EnsureBucketExists(tx, "subscriber", key)
 		if err != nil {
 			return err
 		}
@@ -55,11 +59,11 @@ func (*SubscriberStorage) AddSubscriber(botID, userID int64) error {
 }
 
 // 获取订阅者数量
-func (*SubscriberStorage) GetSubscriberCount(botID int64) (int, error) {
+func (*SubscriberModel) GetSubscriberCount(botID int64) (int, error) {
 	var count int
-	err := blotDB.View(func(tx *bolt.Tx) error {
+	err := storage.DB.View(func(tx *bolt.Tx) error {
 		key := strconv.FormatInt(botID, 10)
-		bucket, err := ensureBucketExists(tx, "subscriber", key)
+		bucket, err := storage.EnsureBucketExists(tx, "subscriber", key)
 		if err != nil {
 			return err
 		}

@@ -1,4 +1,4 @@
-package storage
+package models
 
 import (
 	"crypto/rand"
@@ -9,7 +9,42 @@ import (
 	"strconv"
 
 	"github.com/boltdb/bolt"
+	"github.com/zhangpanyi/luckymoney/app/storage"
 )
+
+// 默认红包ID
+const DefaultLuckyMoneyID = 100000
+
+// 红包信息
+type LuckyMoney struct {
+	ID         uint64 `json:"id"`          // 红包ID
+	SN         string `json:"sn"`          // 唯一编号
+	GroupID    int64  `json:"group_id"`    // 群组ID
+	MessageID  int32  `json:"message_id"`  // 消息ID
+	SenderID   int64  `json:"sneder_id"`   // 发送者
+	SenderName string `json:"sneder_name"` // 发送者名字
+	Asset      string `json:"asset"`       // 资产类型
+	Amount     uint32 `json:"amount"`      // 红包总额
+	Received   uint32 `json:"received"`    // 领取金额
+	Number     uint32 `json:"number"`      // 红包个数
+	Lucky      bool   `json:"lucky"`       // 是否随机
+	Value      uint32 `json:"value"`       // 单个价值
+	Active     bool   `json:"active"`      // 是否激活
+	Message    string `json:"message"`     // 红包留言
+	Timestamp  int64  `json:"timestamp"`   // 时间戳
+}
+
+// 红包用户
+type LuckyMoneyUser struct {
+	UserID    int64  `json:"user_id"`    // 用户ID
+	FirstName string `json:"first_name"` // 用户名
+}
+
+// 红包记录
+type LuckyMoneyRecord struct {
+	Value int             `json:"value"`          // 红包金额
+	User  *LuckyMoneyUser `json:"user,omitempty"` // 用户信息
+}
 
 var (
 	// 领完了
@@ -54,15 +89,15 @@ var (
 // }
 // ***************************************************
 
-// 红包存储
-type LuckyMoneyStorage struct {
+// 红包模型
+type LuckyMoneyModel struct {
 }
 
 // 创建新红包
-func (handler *LuckyMoneyStorage) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []int) (*LuckyMoney, error) {
-	err := blotDB.Update(func(tx *bolt.Tx) error {
+func (model *LuckyMoneyModel) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []int) (*LuckyMoney, error) {
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		// 生成红包ID
-		rootBucket, err := ensureBucketExists(tx, "luckymoney")
+		rootBucket, err := storage.EnsureBucketExists(tx, "luckymoney")
 		if err != nil {
 			return err
 		}
@@ -77,7 +112,7 @@ func (handler *LuckyMoneyStorage) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr 
 		}
 
 		// 生成序列号
-		sn, err := handler.generateSN(tx, data.ID)
+		sn, err := model.generateSN(tx, data.ID)
 		if err != nil {
 			return err
 		}
@@ -93,7 +128,7 @@ func (handler *LuckyMoneyStorage) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr 
 
 		// 插入基本信息
 		sid := strconv.FormatUint(data.ID, 10)
-		bucket, err := ensureBucketExists(tx, "luckymoney", sid)
+		bucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -103,13 +138,13 @@ func (handler *LuckyMoneyStorage) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr 
 		}
 
 		// 插入领取用户
-		_, err = ensureBucketExists(tx, "luckymoney", sid, "users")
+		_, err = storage.EnsureBucketExists(tx, "luckymoney", sid, "users")
 		if err != nil {
 			return err
 		}
 
 		// 插入领取记录
-		worstSeq, bestSeq, err := handler.insertRecord(tx, sid, luckyMoneyArr)
+		worstSeq, bestSeq, err := model.insertRecord(tx, sid, luckyMoneyArr)
 		if err != nil {
 			return err
 		}
@@ -134,7 +169,7 @@ func (handler *LuckyMoneyStorage) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr 
 
 		// 更新用户红包索引
 		key := strconv.FormatInt(data.SenderID, 10)
-		index, err := ensureBucketExists(tx, "luckymoney", "index", key)
+		index, err := storage.EnsureBucketExists(tx, "luckymoney", "index", key)
 		if err != nil {
 			return err
 		}
@@ -148,11 +183,11 @@ func (handler *LuckyMoneyStorage) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr 
 }
 
 // 是否过期
-func (handler *LuckyMoneyStorage) IsExpired(id uint64) bool {
+func (model *LuckyMoneyModel) IsExpired(id uint64) bool {
 	var expired bool
 	sid := strconv.FormatUint(id, 10)
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid)
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -167,10 +202,10 @@ func (handler *LuckyMoneyStorage) IsExpired(id uint64) bool {
 }
 
 // 设置过期
-func (handler *LuckyMoneyStorage) SetExpired(id uint64) error {
+func (model *LuckyMoneyModel) SetExpired(id uint64) error {
 	sid := strconv.FormatUint(id, 10)
-	return blotDB.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid)
+	return storage.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -179,11 +214,11 @@ func (handler *LuckyMoneyStorage) SetExpired(id uint64) error {
 }
 
 // 是否已领取
-func (handler *LuckyMoneyStorage) IsReceived(id uint64, userID int64) (bool, error) {
+func (model *LuckyMoneyModel) IsReceived(id uint64, userID int64) (bool, error) {
 	received := false
 	sid := strconv.FormatUint(id, 10)
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid, "users")
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "users")
 		if err != nil {
 			return err
 		}
@@ -197,10 +232,10 @@ func (handler *LuckyMoneyStorage) IsReceived(id uint64, userID int64) (bool, err
 }
 
 // 获取最新过期红包
-func (handler *LuckyMoneyStorage) GetLatestExpired() (uint64, error) {
+func (model *LuckyMoneyModel) GetLatestExpired() (uint64, error) {
 	var id uint64
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney")
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney")
 		if err != nil {
 			return err
 		}
@@ -224,10 +259,10 @@ func (handler *LuckyMoneyStorage) GetLatestExpired() (uint64, error) {
 }
 
 // 设置最新过期红包
-func (handler *LuckyMoneyStorage) SetLatestExpired(id uint64) error {
+func (model *LuckyMoneyModel) SetLatestExpired(id uint64) error {
 	sid := strconv.FormatUint(id, 10)
-	return blotDB.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney")
+	return storage.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney")
 		if err != nil {
 			return err
 		}
@@ -236,12 +271,12 @@ func (handler *LuckyMoneyStorage) SetLatestExpired(id uint64) error {
 }
 
 // 获取红包信息
-func (handler *LuckyMoneyStorage) GetLuckyMoney(id uint64) (*LuckyMoney, uint32, error) {
+func (model *LuckyMoneyModel) GetLuckyMoney(id uint64) (*LuckyMoney, uint32, error) {
 	var received uint32
 	var base LuckyMoney
 	sid := strconv.FormatUint(id, 10)
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid)
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -271,10 +306,10 @@ func (handler *LuckyMoneyStorage) GetLuckyMoney(id uint64) (*LuckyMoney, uint32,
 }
 
 // 根据SN获取红包ID
-func (handler *LuckyMoneyStorage) GetLuckyMoneyIDBySN(sn string) (uint64, error) {
+func (model *LuckyMoneyModel) GetLuckyMoneyIDBySN(sn string) (uint64, error) {
 	var id uint64
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", "mapping")
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", "mapping")
 		if err != nil {
 			return err
 		}
@@ -298,10 +333,10 @@ func (handler *LuckyMoneyStorage) GetLuckyMoneyIDBySN(sn string) (uint64, error)
 }
 
 // 激活红包
-func (handler *LuckyMoneyStorage) ActiveLuckyMoney(id uint64, userID, chatID int64, messageID int32) error {
+func (model *LuckyMoneyModel) ActiveLuckyMoney(id uint64, userID, chatID int64, messageID int32) error {
 	sid := strconv.FormatUint(id, 10)
-	return blotDB.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid)
+	return storage.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -338,8 +373,8 @@ func (handler *LuckyMoneyStorage) ActiveLuckyMoney(id uint64, userID, chatID int
 }
 
 // 领取红包
-func (handler *LuckyMoneyStorage) ReceiveLuckyMoney(id uint64, userID int64, firstName string) (int, int, error) {
-	received, err := handler.IsReceived(id, userID)
+func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstName string) (int, int, error) {
+	received, err := model.IsReceived(id, userID)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -351,8 +386,8 @@ func (handler *LuckyMoneyStorage) ReceiveLuckyMoney(id uint64, userID int64, fir
 	value := 0
 	count := 0
 	sid := strconv.FormatUint(id, 10)
-	err = blotDB.Update(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid)
+	err = storage.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -385,7 +420,7 @@ func (handler *LuckyMoneyStorage) ReceiveLuckyMoney(id uint64, userID int64, fir
 		}
 
 		// 是否重复领取
-		usersBucket, err := getBucketIfExists(tx, "luckymoney", sid, "users")
+		usersBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "users")
 		if err != nil {
 			return err
 		}
@@ -396,7 +431,7 @@ func (handler *LuckyMoneyStorage) ReceiveLuckyMoney(id uint64, userID int64, fir
 
 		// 执行领取红包
 		newSeq := numReceived + 1
-		value, err = handler.receiveLuckyMoney(tx, sid, newSeq, &LuckyMoneyUser{
+		value, err = model.receiveLuckyMoney(tx, sid, newSeq, &LuckyMoneyUser{
 			UserID:    userID,
 			FirstName: firstName,
 		})
@@ -422,9 +457,12 @@ func (handler *LuckyMoneyStorage) ReceiveLuckyMoney(id uint64, userID int64, fir
 		// 删除用户索引
 		sender := strconv.FormatInt(base.SenderID, 10)
 		if base.Received >= base.Number {
-			index, err := getBucketIfExists(tx, "luckymoney", "index", sender)
-			if err != nil && err != ErrNoBucket {
-				return err
+			index, err := storage.GetBucketIfExists(tx, "luckymoney", "index", sender)
+			if err != nil {
+				if err != storage.ErrNoBucket {
+					return err
+				}
+				return nil
 			}
 			if err = index.Delete([]byte(sid)); err != nil {
 				return err
@@ -442,12 +480,12 @@ func (handler *LuckyMoneyStorage) ReceiveLuckyMoney(id uint64, userID int64, fir
 }
 
 // 获取最佳红包
-func (handler *LuckyMoneyStorage) GetBestAndWorst(id uint64) (*LuckyMoneyRecord, *LuckyMoneyRecord, error) {
+func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyRecord, *LuckyMoneyRecord, error) {
 	var minRecord LuckyMoneyRecord
 	var maxRecord LuckyMoneyRecord
 	sid := strconv.FormatUint(id, 10)
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		bucket, err := getBucketIfExists(tx, "luckymoney", sid)
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err
 		}
@@ -460,7 +498,7 @@ func (handler *LuckyMoneyStorage) GetBestAndWorst(id uint64) (*LuckyMoneyRecord,
 		}
 
 		// 获取红包信息
-		recordBucket, err := getBucketIfExists(tx, "luckymoney", sid, "record")
+		recordBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "record")
 		if err != nil {
 			return err
 		}
@@ -486,14 +524,17 @@ func (handler *LuckyMoneyStorage) GetBestAndWorst(id uint64) (*LuckyMoneyRecord,
 	return &minRecord, &maxRecord, nil
 }
 
-// 获取用户红包
-func (handler *LuckyMoneyStorage) AllLuckyMoney(userID int64, offset, limit uint) ([]uint64, error) {
+// 筛选用户红包
+func (model *LuckyMoneyModel) FilterLuckyMoney(userID int64, offset, limit uint, reverse bool) ([]uint64, error) {
 	ids := make([]uint64, 0)
 	key := strconv.FormatInt(userID, 10)
-	err := blotDB.View(func(tx *bolt.Tx) error {
-		root, err := getBucketIfExists(tx, "luckymoney", "index")
-		if err != nil && err != ErrNoBucket {
-			return err
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		root, err := storage.GetBucketIfExists(tx, "luckymoney", "index")
+		if err != nil {
+			if err != storage.ErrNoBucket {
+				return err
+			}
+			return nil
 		}
 
 		bucket := root.Bucket([]byte(key))
@@ -501,28 +542,40 @@ func (handler *LuckyMoneyStorage) AllLuckyMoney(userID int64, offset, limit uint
 			return nil
 		}
 
-		var idx uint
-		breakError := errors.New("break")
-		err = bucket.ForEach(func(k, v []byte) error {
+		filter := func(idx uint, k, v []byte) bool {
 			if v != nil {
 				if idx >= offset {
 					id, err := strconv.ParseUint(string(k), 10, 64)
 					if err == nil {
 						ids = append(ids, id)
 						if len(ids) >= int(limit) {
-							return breakError
+							return false
 						}
 					}
 				}
 				idx++
 			}
-			return nil
-		})
-
-		if err == breakError {
-			return nil
+			return true
 		}
-		return err
+
+		var idx uint
+		cursor := bucket.Cursor()
+		if reverse {
+			for k, v := cursor.Last(); k != nil; k, v = cursor.Prev() {
+				if !filter(idx, k, v) {
+					break
+				}
+				idx++
+			}
+		} else {
+			for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
+				if !filter(idx, k, v) {
+					break
+				}
+				idx++
+			}
+		}
+		return nil
 	})
 
 	if err != nil {
@@ -532,10 +585,10 @@ func (handler *LuckyMoneyStorage) AllLuckyMoney(userID int64, offset, limit uint
 }
 
 // 遍历红包列表
-func (handler *LuckyMoneyStorage) ForeachLuckyMoney(startID uint64, callback func(*LuckyMoney)) error {
+func (model *LuckyMoneyModel) ForeachLuckyMoney(startID uint64, callback func(*LuckyMoney)) error {
 	var base LuckyMoney
-	return blotDB.View(func(tx *bolt.Tx) error {
-		rootBucket, err := getBucketIfExists(tx, "luckymoney")
+	return storage.DB.View(func(tx *bolt.Tx) error {
+		rootBucket, err := storage.GetBucketIfExists(tx, "luckymoney")
 		if err != nil {
 			return err
 		}
@@ -558,8 +611,8 @@ func (handler *LuckyMoneyStorage) ForeachLuckyMoney(startID uint64, callback fun
 }
 
 // 生成序列号
-func (handler *LuckyMoneyStorage) generateSN(tx *bolt.Tx, id uint64) (string, error) {
-	bucket, err := ensureBucketExists(tx, "luckymoney", "mapping")
+func (model *LuckyMoneyModel) generateSN(tx *bolt.Tx, id uint64) (string, error) {
+	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", "mapping")
 	if err != nil {
 		return "", err
 	}
@@ -580,11 +633,11 @@ func (handler *LuckyMoneyStorage) generateSN(tx *bolt.Tx, id uint64) (string, er
 }
 
 // 创建领取记录
-func (handler *LuckyMoneyStorage) insertRecord(tx *bolt.Tx, sid string, luckyMoneyArr []int) (int, int, error) {
+func (model *LuckyMoneyModel) insertRecord(tx *bolt.Tx, sid string, luckyMoneyArr []int) (int, int, error) {
 
 	worstSeq, bestSeq := 0, 0
 	minValue, maxValue := math.MaxInt32, 0
-	recordBucket, err := ensureBucketExists(tx, "luckymoney", sid, "record")
+	recordBucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid, "record")
 	if err != nil {
 		return 0, 0, err
 	}
@@ -620,9 +673,9 @@ func (handler *LuckyMoneyStorage) insertRecord(tx *bolt.Tx, sid string, luckyMon
 }
 
 // 领取红包
-func (handler *LuckyMoneyStorage) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (int, error) {
+func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (int, error) {
 
-	recordBucket, err := getBucketIfExists(tx, "luckymoney", sid, "record")
+	recordBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "record")
 	if err != nil {
 		return 0, err
 	}

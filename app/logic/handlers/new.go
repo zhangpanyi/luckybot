@@ -13,7 +13,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/logic/algo"
-	"github.com/zhangpanyi/luckymoney/app/storage"
+	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
 
 // 匹配类型
@@ -432,20 +432,20 @@ func (handler *NewHandler) replyEnterMessage(bot *methods.BotExt, r *history.His
 
 // 处理生成红包
 func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName string,
-	info *luckyMoneys) (*storage.LuckyMoney, error) {
+	info *luckyMoneys) (*models.LuckyMoney, error) {
 
-	// 冻结资金
+	// 锁定资金
 	amount := info.amount
 	if info.typ == equalLuckyMoney {
 		amount = info.amount * info.number
 	}
 	serveCfg := config.GetServe()
-	assetStorage := storage.AssetStorage{}
-	err := assetStorage.FrozenAsset(userID, serveCfg.Symbol, amount)
+	model := models.AccountModel{}
+	err := model.LockAccount(userID, serveCfg.Symbol, amount)
 	if err != nil {
 		return nil, err
 	}
-	logger.Errorf("Frozen asset, user_id: %v, asset: %v, amount: %v",
+	logger.Errorf("Lock account, user_id: %v, asset: %v, amount: %v",
 		userID, serveCfg.Symbol, amount)
 
 	// 生成红包
@@ -455,9 +455,9 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 		if err != nil {
 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
 
-			// 解冻资金
-			if err = assetStorage.UnfreezeAsset(userID, serveCfg.Symbol, amount); err != nil {
-				logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
+			// 解锁资金
+			if err = model.LockAccount(userID, serveCfg.Symbol, amount); err != nil {
+				logger.Errorf("Failed to unlock asset, user_id: %v, asset: %v, amount: %v",
 					userID, serveCfg.Symbol, amount)
 			}
 			return nil, err
@@ -470,7 +470,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	}
 
 	// 保存红包信息
-	luckyMoney := storage.LuckyMoney{
+	luckyMoney := models.LuckyMoney{
 		SenderID:   userID,
 		SenderName: firstName,
 		Asset:      serveCfg.Symbol,
@@ -483,14 +483,14 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	if info.typ == equalLuckyMoney {
 		luckyMoney.Value = info.amount
 	}
-	luckyMoneyStorage := storage.LuckyMoneyStorage{}
-	data, err := luckyMoneyStorage.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
+	luckyMoneyModel := models.LuckyMoneyModel{}
+	data, err := luckyMoneyModel.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
 	if err != nil {
 		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
 
 		// 解冻资金
-		if err = assetStorage.UnfreezeAsset(userID, serveCfg.Symbol, amount); err != nil {
-			logger.Errorf("Failed to unfreeze asset, user_id: %v, asset: %v, amount: %v",
+		if err = model.UnlockAccount(userID, serveCfg.Symbol, amount); err != nil {
+			logger.Errorf("Failed to unlock asset, user_id: %v, asset: %v, amount: %v",
 				userID, serveCfg.Symbol, amount)
 		}
 		return nil, err

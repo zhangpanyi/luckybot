@@ -3,12 +3,13 @@ package storage
 import (
 	"errors"
 
-	"github.com/boltdb/bolt"
 	"io"
+
+	"github.com/boltdb/bolt"
 )
 
-// 数据库连接池
-var blotDB *bolt.DB
+// 数据库实例
+var DB *bolt.DB
 
 var (
 	// 没有桶
@@ -18,19 +19,19 @@ var (
 // 连接到数据库
 func Connect(path string) error {
 	var err error
-	blotDB, err = bolt.Open(path, 0600, nil)
+	DB, err = bolt.Open(path, 0600, nil)
 	return err
 }
 
 // 关闭连接
 func Close() error {
-	return blotDB.Close()
+	return DB.Close()
 }
 
 // 备份数据库
 func Backup(writer io.Writer) (int64, error) {
 	var size int64
-	err := blotDB.View(func(tx *bolt.Tx) error {
+	err := DB.View(func(tx *bolt.Tx) error {
 		_, err := tx.WriteTo(writer)
 		if err != nil {
 			return err
@@ -42,7 +43,7 @@ func Backup(writer io.Writer) (int64, error) {
 }
 
 // 确保桶存在
-func ensureBucketExists(tx *bolt.Tx, args ...string) (*bolt.Bucket, error) {
+func EnsureBucketExists(tx *bolt.Tx, args ...string) (*bolt.Bucket, error) {
 	if len(args) == 0 {
 		return nil, ErrNoBucket
 	}
@@ -63,8 +64,8 @@ func ensureBucketExists(tx *bolt.Tx, args ...string) (*bolt.Bucket, error) {
 	return bucket, nil
 }
 
-// 获取桶
-func getBucketIfExists(tx *bolt.Tx, args ...string) (*bolt.Bucket, error) {
+// 获取桶若存在
+func GetBucketIfExists(tx *bolt.Tx, args ...string) (*bolt.Bucket, error) {
 	if len(args) == 0 {
 		return nil, ErrNoBucket
 	}

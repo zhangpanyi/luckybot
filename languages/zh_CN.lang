@@ -39,5 +39,5 @@
     "lng_new_waiting": "红包正在生成中...",
     "lng_new_created": "恭喜您😁，红包已创建成功，快快点击下方 【发送红包】 按钮发送给朋友吧。在任意聊天输入框中输入 `@%s list` 可以查看您创建的红包列表喔。\n\n`注意：如果超过24小时内未被领取，将被自动退回。`",
     "lng_send_luckymoney": "发送红包",
-    "lng_luckymoney_info": "%s\nID：%d，金额：%s/%s %s，数量：%d/%d"
+    "lng_luckymoney_info": "[%s]\n金额: %s/%s %s, 数量: %d/%d"
 }

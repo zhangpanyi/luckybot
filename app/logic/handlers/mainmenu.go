@@ -10,6 +10,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/storage"
+	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
 
 // 消息处理器
@@ -121,15 +122,15 @@ func (handler *MainMenuHandler) route(bot *methods.BotExt, query *types.Callback
 
 // 获取用户资产数量
 func getUserAssetAmount(userID int64, asset string) string {
-	newHandler := storage.AssetStorage{}
-	assetInfo, err := newHandler.GetAsset(userID, asset)
+	model := models.AccountModel{}
+	account, err := model.GetAccount(userID, asset)
 	if err != nil {
-		if err != storage.ErrNoBucket && err != storage.ErrNoSuchTypeAsset {
+		if err != storage.ErrNoBucket && err != models.ErrNoSuchTypeAccount {
 			logger.Warnf("Failed to get user asset, %v, %v, %v", userID, asset, err)
 		}
 		return "0.00"
 	}
-	return fmt.Sprintf("%.2f", float64(assetInfo.Amount)/100.0)
+	return fmt.Sprintf("%.2f", float64(account.Amount)/100.0)
 }
 
 // 获取回复消息
