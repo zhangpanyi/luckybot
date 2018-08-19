@@ -92,29 +92,42 @@ func replyLuckyMoneyInfo(bot *methods.BotExt, query *types.InlineQuery) {
 
 // 生成红包信息
 func makeLuckyMoneyInfo(luckyMoney *models.LuckyMoney, received uint32, idx int) methods.InlineQueryResult {
+	tag := equalLuckyMoney
+	if luckyMoney.Lucky {
+		tag = randLuckyMoney
+	}
 	serveCfg := config.GetServe()
 	result := methods.InlineQueryResultArticle{}
 	result.ID = strconv.Itoa(idx)
 	result.Title = location.Format(luckyMoney.Timestamp)
+
+	// 生成菜单按钮
+	menus := [...]methods.InlineKeyboardButton{
+		methods.InlineKeyboardButton{
+			Text:         tr(luckyMoney.SenderID, "lng_chat_receive"),
+			CallbackData: fmt.Sprintf("%s", luckyMoney.SN),
+		},
+	}
+	result.ReplyMarkup = methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
+
+	// 生成消息内容
 	result.InputMessageContent = &methods.InputTextMessageContent{
-		MessageText:           location.Format(luckyMoney.Timestamp),
+		MessageText:           makeBaseMessage(luckyMoney, received),
 		ParseMode:             methods.ParseModeMarkdown,
 		DisableWebPagePreview: true,
 	}
+
+	// 生成红包缩略图
 	if len(serveCfg.ThumbURL) > 0 {
 		result.ThumbWidth = 64
 		result.ThumbHeight = 64
 		result.ThumbURL = serveCfg.ThumbURL
 	}
 
-	tag := equalLuckyMoney
-	if luckyMoney.Lucky {
-		tag = randLuckyMoney
-	}
-
-	reply := tr(0, "lng_luckymoney_info")
+	// 生成菜单项内容
+	reply := tr(luckyMoney.SenderID, "lng_luckymoney_item")
 	result.Description = fmt.Sprintf(reply,
-		luckyMoneysTypeToString(0, tag),
+		luckyMoneysTypeToString(luckyMoney.SenderID, tag),
 		fmt.Sprintf("%.2f", float64(luckyMoney.Amount-luckyMoney.Received)/100.0),
 		fmt.Sprintf("%.2f", float64(luckyMoney.Amount)/100.0),
 		serveCfg.Symbol,

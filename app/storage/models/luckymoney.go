@@ -19,8 +19,6 @@ const DefaultLuckyMoneyID = 100000
 type LuckyMoney struct {
 	ID         uint64 `json:"id"`          // 红包ID
 	SN         string `json:"sn"`          // 唯一编号
-	GroupID    int64  `json:"group_id"`    // 群组ID
-	MessageID  int32  `json:"message_id"`  // 消息ID
 	SenderID   int64  `json:"sneder_id"`   // 发送者
 	SenderName string `json:"sneder_name"` // 发送者名字
 	Asset      string `json:"asset"`       // 资产类型
@@ -41,7 +39,7 @@ type LuckyMoneyUser struct {
 }
 
 // 红包记录
-type LuckyMoneyRecord struct {
+type LuckyMoneyHistory struct {
 	Value int             `json:"value"`          // 红包金额
 	User  *LuckyMoneyUser `json:"user,omitempty"` // 用户信息
 }
@@ -72,8 +70,8 @@ var (
 //			"users": {					// 红包已领用户
 //				"user_id": ""
 //			}
-// 			"record": {					// 红包领取记录
-// 				"seq": types.LuckyMoneyRecord
+// 			"history": {				// 红包领取记录
+// 				"seq": types.LuckyMoneyHistory
 // 			}
 //			"expired": true				// 红包是否过期
 // 		},
@@ -144,7 +142,7 @@ func (model *LuckyMoneyModel) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []in
 		}
 
 		// 插入领取记录
-		worstSeq, bestSeq, err := model.insertRecord(tx, sid, luckyMoneyArr)
+		worstSeq, bestSeq, err := model.insertHistory(tx, sid, luckyMoneyArr)
 		if err != nil {
 			return err
 		}
@@ -332,46 +330,6 @@ func (model *LuckyMoneyModel) GetLuckyMoneyIDBySN(sn string) (uint64, error) {
 	return id, nil
 }
 
-// 激活红包
-func (model *LuckyMoneyModel) ActiveLuckyMoney(id uint64, userID, chatID int64, messageID int32) error {
-	sid := strconv.FormatUint(id, 10)
-	return storage.DB.Update(func(tx *bolt.Tx) error {
-		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
-		if err != nil {
-			return err
-		}
-
-		// 检查状态
-		if bucket.Get([]byte("expired")) != nil {
-			return ErrLuckyMoneydExpired
-		}
-
-		// 获取红包基本信息
-		var base LuckyMoney
-		jsb := bucket.Get([]byte("base"))
-		if err = json.Unmarshal(jsb, &base); err != nil {
-			return err
-		}
-
-		if base.Active {
-			return ErrAlreadyActivated
-		}
-
-		if base.SenderID != userID {
-			return ErrPermissionDenied
-		}
-
-		// 更新红包基本信息
-		base.Active = true
-		base.GroupID = chatID
-		base.MessageID = messageID
-		if jsb, err = json.Marshal(&base); err != nil {
-			return err
-		}
-		return bucket.Put([]byte("base"), jsb)
-	})
-}
-
 // 领取红包
 func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstName string) (int, int, error) {
 	received, err := model.IsReceived(id, userID)
@@ -416,7 +374,7 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 
 		// 红包是否激活
 		if !base.Active {
-			return ErrNotActivated
+			base.Active = true
 		}
 
 		// 是否重复领取
@@ -479,10 +437,45 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 	return value, count, nil
 }
 
+// 获取领取历史
+func (model *LuckyMoneyModel) GetHistory(id uint64) ([]*LuckyMoneyHistory, error) {
+	sid := strconv.FormatUint(id, 10)
+	array := make([]*LuckyMoneyHistory, 0)
+	err := storage.DB.View(func(tx *bolt.Tx) error {
+		historyBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "history")
+		if err != nil {
+			if err != storage.ErrNoBucket {
+				return err
+			}
+			return nil
+		}
+
+		cursor := historyBucket.Cursor()
+		for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
+			if v != nil {
+				var item LuckyMoneyHistory
+				if err = json.Unmarshal(v, &item); err != nil {
+					return err
+				}
+				if item.User == nil {
+					return nil
+				}
+				array = append(array, &item)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return array, nil
+}
+
 // 获取最佳红包
-func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyRecord, *LuckyMoneyRecord, error) {
-	var minRecord LuckyMoneyRecord
-	var maxRecord LuckyMoneyRecord
+func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *LuckyMoneyHistory, error) {
+	var min LuckyMoneyHistory
+	var max LuckyMoneyHistory
 	sid := strconv.FormatUint(id, 10)
 	err := storage.DB.View(func(tx *bolt.Tx) error {
 		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
@@ -498,21 +491,21 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyRecord, *Lu
 		}
 
 		// 获取红包信息
-		recordBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "record")
+		historyBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "history")
 		if err != nil {
 			return err
 		}
 
-		minValueData := recordBucket.Get(worstSeq)
-		maxValueData := recordBucket.Get(bestSeq)
+		minValueData := historyBucket.Get(worstSeq)
+		maxValueData := historyBucket.Get(bestSeq)
 		if minValueData == nil || maxValueData == nil {
 			return errors.New("nou found")
 		}
 
-		if err = json.Unmarshal(minValueData, &minRecord); err != nil {
+		if err = json.Unmarshal(minValueData, &min); err != nil {
 			return err
 		}
-		if err = json.Unmarshal(maxValueData, &maxRecord); err != nil {
+		if err = json.Unmarshal(maxValueData, &max); err != nil {
 			return err
 		}
 		return nil
@@ -521,7 +514,7 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyRecord, *Lu
 	if err != nil {
 		return nil, nil, err
 	}
-	return &minRecord, &maxRecord, nil
+	return &min, &max, nil
 }
 
 // 筛选用户红包
@@ -633,28 +626,28 @@ func (model *LuckyMoneyModel) generateSN(tx *bolt.Tx, id uint64) (string, error)
 }
 
 // 创建领取记录
-func (model *LuckyMoneyModel) insertRecord(tx *bolt.Tx, sid string, luckyMoneyArr []int) (int, int, error) {
+func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyArr []int) (int, int, error) {
 
 	worstSeq, bestSeq := 0, 0
 	minValue, maxValue := math.MaxInt32, 0
-	recordBucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid, "record")
+	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid, "history")
 	if err != nil {
 		return 0, 0, err
 	}
 	for i := range luckyMoneyArr {
-		seq, err := recordBucket.NextSequence()
+		seq, err := bucket.NextSequence()
 		if err != nil {
 			return 0, 0, err
 		}
 
-		val := LuckyMoneyRecord{Value: luckyMoneyArr[i]}
+		val := LuckyMoneyHistory{Value: luckyMoneyArr[i]}
 		jsb, err := json.Marshal(&val)
 		if err != nil {
 			return 0, 0, err
 		}
 
 		sseq := strconv.FormatUint(seq, 10)
-		err = recordBucket.Put([]byte(sseq), jsb)
+		err = bucket.Put([]byte(sseq), jsb)
 		if err != nil {
 			return 0, 0, err
 		}
@@ -675,26 +668,26 @@ func (model *LuckyMoneyModel) insertRecord(tx *bolt.Tx, sid string, luckyMoneyAr
 // 领取红包
 func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (int, error) {
 
-	recordBucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "record")
+	bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "history")
 	if err != nil {
 		return 0, err
 	}
 
-	var record LuckyMoneyRecord
+	var history LuckyMoneyHistory
 	key := []byte(strconv.Itoa(seq))
-	jsb := recordBucket.Get(key)
-	if err = json.Unmarshal(jsb, &record); err != nil {
+	jsb := bucket.Get(key)
+	if err = json.Unmarshal(jsb, &history); err != nil {
 		return 0, err
 	}
-	record.User = user
+	history.User = user
 
-	jsb, err = json.Marshal(&record)
+	jsb, err = json.Marshal(&history)
 	if err != nil {
 		return 0, err
 	}
 
-	if err = recordBucket.Put(key, jsb); err != nil {
+	if err = bucket.Put(key, jsb); err != nil {
 		return 0, err
 	}
-	return record.Value, nil
+	return history.Value, nil
 }

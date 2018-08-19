@@ -12,7 +12,7 @@ import (
 
 // 机器人更新
 func NewUpdate(bot *methods.BotExt, update *types.Update) {
-	// 发送红包
+	// 展示红包
 	if update.InlineQuery != nil {
 		handlers.ShowLuckyMoney(bot, update.InlineQuery)
 		return
@@ -20,17 +20,11 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 
 	// 获取用户ID
 	var fromID int64
-	var chatType string
 	if update.Message != nil {
 		fromID = update.Message.From.ID
-		chatType = update.Message.Chat.Type
 	} else if update.CallbackQuery != nil {
 		fromID = update.CallbackQuery.From.ID
-		chatType = update.CallbackQuery.Message.Chat.Type
 	} else {
-		return
-	}
-	if chatType != types.ChatPrivate {
 		return
 	}
 
@@ -42,6 +36,12 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 	r, err := context.GetRecord(uint32(fromID))
 	if err != nil {
 		logger.Warnf("Failed to get bot record, bot_id: %v, %v, %v", bot.ID, fromID, err)
+		return
+	}
+
+	// 领取红包
+	if update.CallbackQuery != nil && update.CallbackQuery.InlineMessageID != nil {
+		new(handlers.ReceiveHandler).Handle(bot, r, update)
 		return
 	}
 
