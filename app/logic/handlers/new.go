@@ -434,32 +434,17 @@ func (handler *NewHandler) replyEnterMessage(bot *methods.BotExt, r *history.His
 func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName string,
 	info *luckyMoneys) (*models.LuckyMoney, error) {
 
-	// 锁定资金
+	// 生成红包
 	amount := info.amount
+	var luckyMoneyArr []int
 	if info.typ == equalLuckyMoney {
 		amount = info.amount * info.number
 	}
-	serveCfg := config.GetServe()
-	model := models.AccountModel{}
-	err := model.LockAccount(userID, serveCfg.Symbol, amount)
-	if err != nil {
-		return nil, err
-	}
-	logger.Errorf("Lock account, user_id: %v, asset: %v, amount: %v",
-		userID, serveCfg.Symbol, amount)
-
-	// 生成红包
-	var luckyMoneyArr []int
 	if info.typ == randLuckyMoney {
+		var err error
 		luckyMoneyArr, err = algo.Generate(amount, info.number)
 		if err != nil {
 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
-
-			// 解锁资金
-			if err = model.LockAccount(userID, serveCfg.Symbol, amount); err != nil {
-				logger.Errorf("Failed to unlock asset, user_id: %v, asset: %v, amount: %v",
-					userID, serveCfg.Symbol, amount)
-			}
 			return nil, err
 		}
 	} else {
@@ -468,6 +453,16 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 			luckyMoneyArr = append(luckyMoneyArr, int(info.amount))
 		}
 	}
+
+	// 锁定资金
+	serveCfg := config.GetServe()
+	model := models.AccountModel{}
+	acount, err := model.LockAccount(userID, serveCfg.Symbol, amount)
+	if err != nil {
+		return nil, err
+	}
+	logger.Errorf("Lock account, user_id: %v, asset: %v, amount: %v",
+		userID, serveCfg.Symbol, amount)
 
 	// 保存红包信息
 	luckyMoney := models.LuckyMoney{
@@ -486,17 +481,26 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	luckyMoneyModel := models.LuckyMoneyModel{}
 	data, err := luckyMoneyModel.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
 	if err != nil {
-		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
-
-		// 解冻资金
+		// 解锁资金
 		if err = model.UnlockAccount(userID, serveCfg.Symbol, amount); err != nil {
 			logger.Errorf("Failed to unlock asset, user_id: %v, asset: %v, amount: %v",
 				userID, serveCfg.Symbol, amount)
 		}
+		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
 		return nil, err
 	}
 	logger.Errorf("Generate lucky money, id: %v, user_id: %v, asset: %v, amount: %v",
 		data.ID, userID, serveCfg.Symbol, amount)
+
+	// 插入账户记录
+	versionModel := models.AccountVersionModel{}
+	versionModel.InsertVersion(userID, &models.Version{
+		Symbol:          serveCfg.Symbol,
+		Locked:          int32(amount),
+		Amount:          acount.Amount,
+		Reason:          models.ReasonGive,
+		RefLuckyMoneyID: &luckyMoney.ID,
+	})
 
 	return data, nil
 }

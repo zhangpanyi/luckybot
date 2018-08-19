@@ -128,13 +128,25 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 
 	// 更新资产信息
 	accountModel := models.AccountModel{}
-	err = accountModel.TransferFromLockAccount(luckyMoney.SenderID, fromID,
+	_, toAccount, err := accountModel.TransferFromLockAccount(luckyMoney.SenderID, fromID,
 		luckyMoney.Asset, uint32(value))
 	if err != nil {
 		logger.Fatalf("Failed to transfer from lock account, from: %d, to: %d, asset: %s, amount: %d, %v",
 			fromID, fromID, luckyMoney.Asset, value, err)
 		return
 	}
+
+	// 插入账户记录
+	versionModel := models.AccountVersionModel{}
+	versionModel.InsertVersion(fromID, &models.Version{
+		Symbol:          luckyMoney.Asset,
+		Balance:         int32(value),
+		Amount:          toAccount.Amount,
+		Reason:          models.ReasonReceive,
+		RefLuckyMoneyID: &luckyMoney.ID,
+		RefUserID:       &luckyMoney.SenderID,
+		RefUserName:     &luckyMoney.SenderName,
+	})
 
 	// 发送领取通知
 	alert := tr(0, "lng_chat_receive_success")

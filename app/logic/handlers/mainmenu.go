@@ -105,7 +105,7 @@ func (handler *MainMenuHandler) route(bot *methods.BotExt, query *types.Callback
 
 	// 操作历史记录
 	if strings.HasPrefix(query.Data, "/history/") {
-		return nil
+		return new(HistoryHandler)
 	}
 
 	// 存款操作

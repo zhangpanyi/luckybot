@@ -167,15 +167,15 @@ func (model *AccountModel) Withdraw(userID int64, symbol string, amount uint32) 
 }
 
 // 锁定账户
-func (model *AccountModel) LockAccount(userID int64, symbol string, amount uint32) error {
+func (model *AccountModel) LockAccount(userID int64, symbol string, amount uint32) (*Account, error) {
+	var acount Account
 	key := strconv.FormatInt(userID, 10)
-	return storage.DB.Update(func(tx *bolt.Tx) error {
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
 		if err != nil {
 			return err
 		}
 
-		var acount Account
 		jsb := bucket.Get([]byte(symbol))
 		if jsb == nil {
 			return ErrNoSuchTypeAccount
@@ -201,6 +201,11 @@ func (model *AccountModel) LockAccount(userID int64, symbol string, amount uint3
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &acount, nil
 }
 
 // 解锁账户
@@ -241,10 +246,14 @@ func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uin
 }
 
 // 从锁定账户转账
-func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string, amount uint32) error {
+func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string,
+	amount uint32) (*Account, *Account, error) {
+
+	var toAccount Account
+	var fromAccount Account
 	toKey := strconv.FormatInt(to, 10)
 	fromKey := strconv.FormatInt(from, 10)
-	return storage.DB.Update(func(tx *bolt.Tx) error {
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		// 获取桶
 		toBucket, err := storage.EnsureBucketExists(tx, "accounts", toKey)
 		if err != nil {
@@ -257,21 +266,20 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 		}
 
 		// 获取账户信息
-		var account Account
 		jsb := fromBucket.Get([]byte(symbol))
 		if jsb == nil {
 			return ErrNoSuchTypeAccount
 		}
-		if err = json.Unmarshal(jsb, &account); err != nil {
+		if err = json.Unmarshal(jsb, &fromAccount); err != nil {
 			return err
 		}
 
-		if amount > account.Locked {
+		if amount > fromAccount.Locked {
 			return ErrInsufficientAmount
 		}
-		account.Locked -= amount
+		fromAccount.Locked -= amount
 
-		jsb, err = json.Marshal(&account)
+		jsb, err = json.Marshal(&fromAccount)
 		if err != nil {
 			return err
 		}
@@ -283,17 +291,17 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 		// 转移锁定资产
 		jsb = toBucket.Get([]byte(symbol))
 		if jsb == nil {
-			account.Symbol = symbol
-			account.Amount = amount
-			account.Locked = 0
+			toAccount.Symbol = symbol
+			toAccount.Amount = amount
+			toAccount.Locked = 0
 		} else {
-			if err = json.Unmarshal(jsb, &account); err != nil {
+			if err = json.Unmarshal(jsb, &toAccount); err != nil {
 				return err
 			}
-			account.Amount += amount
+			toAccount.Amount += amount
 		}
 
-		jsb, err = json.Marshal(&account)
+		jsb, err = json.Marshal(&toAccount)
 		if err != nil {
 			return err
 		}
@@ -303,4 +311,9 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, nil, err
+	}
+	return &fromAccount, &toAccount, nil
 }

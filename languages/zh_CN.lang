@@ -53,5 +53,8 @@
     "lng_chat_receive_success": "😀恭喜您，获得了 %s %s。查询余额请与红包机器人 @%s 进行聊天。",
     "lng_chat_receive_settle": "\n\n--------------------\n手气最佳：[@%s](tg://user?id=%d) *%s %s*\n手气最烂：[@%s](tg://user?id=%d) *%s %s*",
     "lng_chat_receive_history": "[@%s](tg://user?id=%d)(*%s %s*)",
-    "lng_chat_receive_format": "%s\n\n--------------------\n%s%s"
+    "lng_chat_receive_format": "%s\n\n--------------------\n%s%s",
+    "lng_history_no_op": "您当前还没有任何操作记录。",
+    "lng_history_give": "您发放了红包(*%d*), 花费 *%.2f %s*",
+    "lng_history_receive": "您领取了 [[@%s](tg://user?id=%d)] 发放的红包(*%d*), 获得 *%.2f %s*"
 }
