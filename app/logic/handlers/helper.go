@@ -24,7 +24,7 @@ func makeBaseMessage(luckyMoney *models.LuckyMoney, received uint32) string {
 	if !luckyMoney.Lucky {
 		amount = fmt.Sprintf("%.2f", float64(luckyMoney.Amount*luckyMoney.Number)/100.0)
 	}
-	return fmt.Sprintf(message, typ, luckyMoney.Number-received, luckyMoney.Number,
+	return fmt.Sprintf(message, luckyMoney.ID, typ, luckyMoney.Number-received, luckyMoney.Number,
 		luckyMoney.SenderName, luckyMoney.SenderID,
 		amount, luckyMoney.Asset, typ, luckyMoney.Message)
 }

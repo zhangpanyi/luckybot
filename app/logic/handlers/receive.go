@@ -108,7 +108,6 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 	size := 0
 	users := make([]string, 0)
 	history, err := model.GetHistory(id)
-	fmt.Printf("%+v\n", history)
 	if err != nil {
 		logger.Errorf("Failed to get lucky money history, %v", err)
 	}
@@ -157,26 +156,24 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 	}
 	replyMarkup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
 
+	// 手气结果统计
+	settle := ""
+	if received == luckyMoney.Number {
+		best, worst, err := model.GetBestAndWorst(id)
+		if err == nil && luckyMoney.Number > 1 && luckyMoney.Lucky {
+			settle = tr(fromID, "lng_chat_receive_settle")
+			bestValue := fmt.Sprintf("%.2f", float64(best.Value)/100.0)
+			worstValue := fmt.Sprintf("%.2f", float64(worst.Value)/100.0)
+			settle = fmt.Sprintf(settle,
+				best.User.FirstName, best.User.UserID, bestValue, luckyMoney.Asset,
+				worst.User.FirstName, worst.User.UserID, worstValue, luckyMoney.Asset)
+		}
+	}
+
 	// 更新红包信息
 	message := makeBaseMessage(luckyMoney, received)
 	if len(users) > 0 {
-		message = fmt.Sprintf(tr(fromID, "lng_chat_receive_format"), message, strings.Join(users, ","))
+		message = fmt.Sprintf(tr(fromID, "lng_chat_receive_format"), message, strings.Join(users, ","), settle)
 	}
 	bot.EditReplyMarkupByInlineMessageID(*query.InlineMessageID, message, true, replyMarkup)
-
-	// // 回复领完消息
-	// if received == luckyMoney.Number {
-	// 	reply = tr(0, "lng_chat_receive_gameover")
-	// 	minLuckyMoney, maxLuckyMoney, err := newHandler.GetTwoTxtremes(id)
-	// 	if err == nil && luckyMoney.Number > 1 && luckyMoney.Lucky {
-	// 		body := tr(0, "lng_chat_receive_two_txtremes")
-	// 		minValue := fmt.Sprintf("%.2f", float64(minLuckyMoney.Value)/100.0)
-	// 		maxValue := fmt.Sprintf("%.2f", float64(maxLuckyMoney.Value)/100.0)
-	// 		body = fmt.Sprintf(body, maxLuckyMoney.User.FirstName, maxLuckyMoney.User.UserID, maxValue,
-	// 			storage.GetAsset(luckyMoney.Asset), minLuckyMoney.User.FirstName, minLuckyMoney.User.UserID,
-	// 			minValue, storage.GetAsset(luckyMoney.Asset))
-	// 		reply = reply + "\n\n" + body
-	// 	}
-	// 	bot.ReplyMessage(query.Message, reply, true, nil)
-	// }
 }

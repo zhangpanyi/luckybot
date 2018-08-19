@@ -474,8 +474,8 @@ func (model *LuckyMoneyModel) GetHistory(id uint64) ([]*LuckyMoneyHistory, error
 
 // 获取最佳红包
 func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *LuckyMoneyHistory, error) {
-	var min LuckyMoneyHistory
-	var max LuckyMoneyHistory
+	var best LuckyMoneyHistory
+	var worst LuckyMoneyHistory
 	sid := strconv.FormatUint(id, 10)
 	err := storage.DB.View(func(tx *bolt.Tx) error {
 		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
@@ -496,16 +496,16 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *L
 			return err
 		}
 
-		minValueData := historyBucket.Get(worstSeq)
-		maxValueData := historyBucket.Get(bestSeq)
-		if minValueData == nil || maxValueData == nil {
+		bestData := historyBucket.Get(bestSeq)
+		worstData := historyBucket.Get(worstSeq)
+		if bestData == nil || worstData == nil {
 			return errors.New("nou found")
 		}
 
-		if err = json.Unmarshal(minValueData, &min); err != nil {
+		if err = json.Unmarshal(bestData, &best); err != nil {
 			return err
 		}
-		if err = json.Unmarshal(maxValueData, &max); err != nil {
+		if err = json.Unmarshal(worstData, &worst); err != nil {
 			return err
 		}
 		return nil
@@ -514,7 +514,7 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *L
 	if err != nil {
 		return nil, nil, err
 	}
-	return &min, &max, nil
+	return &best, &worst, nil
 }
 
 // 筛选用户红包
