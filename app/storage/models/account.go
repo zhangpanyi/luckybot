@@ -98,15 +98,15 @@ func (model *AccountModel) GetAccount(userID int64, symbol string) (*Account, er
 }
 
 // 存款
-func (model *AccountModel) Deposit(userID int64, symbol string, amount uint32) error {
+func (model *AccountModel) Deposit(userID int64, symbol string, amount uint32) (*Account, error) {
+	var acount Account
 	key := strconv.FormatInt(userID, 10)
-	return storage.DB.Update(func(tx *bolt.Tx) error {
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
 		if err != nil {
 			return err
 		}
 
-		var acount Account
 		jsb := bucket.Get([]byte(symbol))
 		if jsb == nil {
 			acount.Symbol = symbol
@@ -128,6 +128,11 @@ func (model *AccountModel) Deposit(userID int64, symbol string, amount uint32) e
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &acount, nil
 }
 
 // 取款

@@ -11,6 +11,7 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
+	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/location"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
@@ -90,6 +91,17 @@ func (handler *HistoryHandler) makeHistoryMessage(fromID int64, version *models.
 		message := tr(fromID, "lng_history_giveback")
 		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
 			math.Abs(float64(version.Locked))/100, version.Symbol)
+	case models.ReasonDeposit:
+		// 提现成功
+		message := tr(fromID, "lng_history_deposit")
+		return fmt.Sprintf(message, float64(version.Balance)/100, version.Symbol,
+			*version.RefBlockHeight, *version.RefTxID)
+	case models.ReasonWithdraw:
+		// 提现成功
+		serverCfg := config.GetServe()
+		message := tr(fromID, "lng_history_withdraw")
+		return fmt.Sprintf(message, float64(version.Locked)/100, version.Symbol, serverCfg.Name,
+			*version.RefAddress, float64(version.Fee)/100, version.Symbol)
 	}
 	return ""
 }

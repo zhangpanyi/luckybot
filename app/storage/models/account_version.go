@@ -34,7 +34,8 @@ type Version struct {
 	Timestamp       int64   `json:"Timestamp"`                    // 时间戳
 	Reason          Reason  `json:"reason"`                       // 触发原因
 	RefLuckyMoneyID *uint64 `json:"ref_lucky_money_id,omitempty"` // 关联红包ID
-	RefBlockHeight  *uint32 `json:"ref_block_height,omitempty"`   // 关联区块高度
+	RefBlockHeight  *uint64 `json:"ref_block_height,omitempty"`   // 关联区块高度
+	RefTxID         *string `json:"ref_tx_id,omitempty"`          // 关联交易ID
 	RefUserID       *int64  `json:"ref_user_id,omitempty"`        // 关联用户ID
 	RefUserName     *string `json:"ref_user_name,omitempty"`      // 关联用户名
 	RefOrderID      *string `json:"ref_order_id,omitempty"`       // 关联订单ID

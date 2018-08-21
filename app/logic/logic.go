@@ -46,11 +46,25 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 	}
 
 	// 赠送测试代币
-	serve := config.GetServe()
-	account := models.AccountModel{}
-	balance, err := account.GetAccount(fromID, serve.Symbol)
+	serverCfg := config.GetServe()
+	accountModel := models.AccountModel{}
+	balance, err := accountModel.GetAccount(fromID, serverCfg.Symbol)
 	if err != nil || balance.Amount == 0 {
-		account.Deposit(fromID, serve.Symbol, 100*100)
+		amount := uint32(100 * 100)
+		account, err := accountModel.Deposit(fromID, serverCfg.Symbol, amount)
+		if err == nil {
+			var height uint64
+			txid := "test gift"
+			versionModel := models.AccountVersionModel{}
+			versionModel.InsertVersion(fromID, &models.Version{
+				Symbol:         serverCfg.Symbol,
+				Balance:        int32(amount),
+				Amount:         account.Amount,
+				Reason:         models.ReasonDeposit,
+				RefBlockHeight: &height,
+				RefTxID:        &txid,
+			})
+		}
 	}
 
 	// 处理机器人请求
