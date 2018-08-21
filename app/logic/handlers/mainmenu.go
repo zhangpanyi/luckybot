@@ -115,7 +115,7 @@ func (handler *MainMenuHandler) route(bot *methods.BotExt, query *types.Callback
 
 	// 提现操作
 	if strings.HasPrefix(query.Data, "/withdraw/") {
-		return nil
+		return new(WithdrawHandler)
 	}
 	return nil
 }
@@ -149,5 +149,5 @@ func (handler *MainMenuHandler) replyMessage(userID int64) (string, []methods.In
 		methods.InlineKeyboardButton{Text: tr(userID, "lng_share"), CallbackData: "/share/"},
 		methods.InlineKeyboardButton{Text: tr(userID, "lng_help"), CallbackData: "/usage/"},
 	}
-	return fmt.Sprintf(tr(userID, "lng_welcome"), serveCfg.Symbol, amount), menus[:]
+	return fmt.Sprintf(tr(userID, "lng_welcome"), serveCfg.Name, serveCfg.Symbol, amount), menus[:]
 }

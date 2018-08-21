@@ -12,11 +12,11 @@
     "lng_rate": "🌟 参与评级",
     "lng_share": "💖 我要推荐",
     "lng_help": "❓ 帮助说明",
-    "lng_welcome": "😀欢迎使用电报红包机器人，我可以帮助您向联系人或者群组发放红包，祝您使用愉快。🍺🍺🍺\n\n您目前 **%s** 余额：*%s*",
-    "lng_deposit_say": "📩 充值\n\n请将 **%s** 转入以下地址：\n*%s*\n\n备注信息(MEMO)：\n*%d*\n\n充值须知：\n`1. 备注错误或不填将无法到账\n2. 充值金额只保留小数点后两位`",
+    "lng_welcome": "😀欢迎使用%s红包机器人，我可以帮助您向联系人或者群组发放红包，祝您使用愉快。🍺🍺🍺\n\n您目前 **%s** 余额：*%s*",
+    "lng_deposit_say": "📩 充值\n\n请您将 *%s(%s)* 转入以下地址：\n*%s*\n\n备注信息(MEMO)：\n*%d*\n\n充值须知：\n`1. 备注错误或不填将无法到账\n2. 充值金额只保留小数点后两位`",
     "lng_rate_say": "🌟 参与评级\n\n非常感谢！如果你觉得这个机器人不错，请点击下面的链接给它评级。\n[http://telegram.me/storebot?start=%s](http://telegram.me/storebot?start=%s)",
     "lng_share_say": "💖 我要推荐\n\n感谢对此机器人的支持，请将以下链接分享给其他用户或者群组：\n[http://telegram.me/%s?start=%d](http://telegram.me/%s?start=%d)",
-    "lng_usage_say": "❓ 帮助说明\n\n欢迎使用电报红包机器人，如果在使用过程中遇到任何问题，请联系管理员解决。",
+    "lng_usage_say": "❓ 帮助说明\n\n欢迎使用%s红包机器人，如果在使用过程中遇到任何问题，请联系管理员解决。",
     "lng_new_choose_type": "🎁 发红包(*1*/4)\n\n请您选择红包类型，普通红包群组每人将收到固定金额，随机红包每人收到的金额随机。",
     "lng_new_rand": "随机红包",
     "lng_new_equal": "普通红包",
@@ -57,5 +57,7 @@
     "lng_history_no_op": "您当前还没有任何操作记录。",
     "lng_history_give": "您发放了红包(*%d*), 花费 *%.2f %s*",
     "lng_history_receive": "您领取了 [[@%s](tg://user?id=%d)] 发放的红包(*%d*), 获得 *%.2f %s*",
-    "lng_history_giveback": "您创建的红包(*%d*)已过期, 退还剩余金额 *%.2f %s*"
+    "lng_history_giveback": "您创建的红包(*%d*)已过期, 退还剩余金额 *%.2f %s*",
+    "lng_withdraw_enter_amount": "📨 提现(*1*/3)\n\n您正在申请提现，请在下一条消息中回复需要提现的数量。\n您目前的账户余额：*%s %s*\n\n`注意：网络手续费收取%f %s`",
+    "lng_withdraw_enter_amount_answer": "请您在下一条消息中回复需要提现 %s 的数量。"
 }

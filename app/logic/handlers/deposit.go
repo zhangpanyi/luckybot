@@ -17,7 +17,7 @@ type DepositHandler struct {
 func (*DepositHandler) Handle(bot *methods.BotExt, r *history.History, update *types.Update) {
 	serveCfg := config.GetServe()
 	fromID := update.CallbackQuery.From.ID
-	reply := fmt.Sprintf(tr(fromID, "lng_deposit_say"), serveCfg.Symbol, serveCfg.Address, fromID)
+	reply := fmt.Sprintf(tr(fromID, "lng_deposit_say"), serveCfg.Name, serveCfg.Symbol, serveCfg.Address, fromID)
 	menus := [...]methods.InlineKeyboardButton{
 		methods.InlineKeyboardButton{
 			Text:         tr(fromID, "lng_back_superior"),

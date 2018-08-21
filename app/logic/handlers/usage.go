@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/zhangpanyi/basebot/history"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
+	"github.com/zhangpanyi/luckymoney/app/config"
 )
 
 // 使用说明
@@ -21,7 +24,9 @@ func (*UsageHandler) Handle(bot *methods.BotExt, r *history.History, update *typ
 	}
 	markup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
 
+	serveCfg := config.GetServe()
 	reply := tr(fromID, "lng_usage_say")
+	reply = fmt.Sprintf(reply, serveCfg.Name)
 	bot.AnswerCallbackQuery(update.CallbackQuery, "", false, "", 0)
 	bot.EditMessageReplyMarkupDisableWebPagePreview(update.CallbackQuery.Message, reply, true, markup)
 }

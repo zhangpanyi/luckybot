@@ -25,6 +25,9 @@ symbol: "SYS"
 # 充值地址
 address: "address"
 
+# 提现手续费
+withdraw_fee: 1
+
 # 红包过期时间(秒)
 expire: 86400
 
