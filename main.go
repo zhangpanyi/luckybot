@@ -8,7 +8,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/vrecan/death"
 	"github.com/zhangpanyi/basebot/logger"
+	"github.com/zhangpanyi/basebot/telegram/updater"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/inspector"
 	"github.com/zhangpanyi/luckymoney/app/logic"
 	"github.com/zhangpanyi/luckymoney/app/logic/context"
 	"github.com/zhangpanyi/luckymoney/app/poller"
@@ -32,13 +34,17 @@ func main() {
 	// 消息上下文管理
 	context.CreateManagerForOnce(16)
 
-	// 创建轮询器
+	// 创建机器人轮询器
 	poller := poll.NewPoller(serveCfg.APIWebsite)
 	bot, err := poller.StartPoll(serveCfg.Token, logic.NewUpdate)
 	if err != nil {
 		logger.Panic(err)
 	}
 	logger.Infof("Lucky money bot id is: %d", bot.ID)
+
+	// 启动红包检查器
+	pool := updater.NewPool(64)
+	inspector.StartChecking(bot, pool)
 
 	// 启动HTTP服务器
 	router := mux.NewRouter()

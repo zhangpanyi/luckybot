@@ -16,11 +16,17 @@ api_website: "http://tg.docauthor.com/"
 # 机器人token
 token: "TELEGRAM_BOT_TOKEN"
 
+# 资产名称
+name: "测试币"
+
 # 资产符号
 symbol: "SYS"
 
 # 充值地址
 address: "address"
+
+# 红包过期时间(秒)
+expire: 86400
 
 # 最大留言长度
 max_message_len: 32

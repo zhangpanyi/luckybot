@@ -13,6 +13,75 @@ import (
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
 
+// 回复红包信息
+func ReplyLuckyMoneyInfo(bot *methods.BotExt, fromID int64, inlineMessageID string,
+	luckyMoney *models.LuckyMoney, received uint32, expired bool) {
+
+	// 获取领取记录
+	size := 0
+	users := make([]string, 0)
+	model := models.LuckyMoneyModel{}
+	history, err := model.GetHistory(luckyMoney.ID)
+	if err != nil {
+		logger.Errorf("Failed to get lucky money history, %v", err)
+	}
+	serveCfg := config.GetServe()
+	for i := 0; i < len(history); i++ {
+		user := history[i].User
+		message := tr(fromID, "lng_chat_receive_history")
+		amount := fmt.Sprintf("%.2f", float64(history[i].Value)/100)
+		message = fmt.Sprintf(message, user.FirstName, user.UserID, amount, luckyMoney.Asset)
+
+		size += len(message)
+		if size > serveCfg.MaxHistoryTextLen {
+			users = append(users, "...")
+			break
+		}
+		users = append(users, message)
+	}
+
+	// 更新按钮信息
+	menus := make([]methods.InlineKeyboardButton, 0)
+	if received == luckyMoney.Number {
+		menus = append(menus, methods.InlineKeyboardButton{
+			Text:         tr(fromID, "lng_chat_finished"),
+			CallbackData: "removed",
+		})
+	} else if expired {
+		menus = append(menus, methods.InlineKeyboardButton{
+			Text:         tr(fromID, "lng_chat_expired"),
+			CallbackData: "expired",
+		})
+	} else {
+		menus = append(menus, methods.InlineKeyboardButton{
+			Text:         tr(fromID, "lng_chat_receive"),
+			CallbackData: luckyMoney.SN,
+		})
+	}
+	replyMarkup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
+
+	// 手气结果统计
+	settle := ""
+	if received == luckyMoney.Number {
+		best, worst, err := model.GetBestAndWorst(luckyMoney.ID)
+		if err == nil && luckyMoney.Number > 1 && luckyMoney.Lucky {
+			settle = tr(fromID, "lng_chat_receive_settle")
+			bestValue := fmt.Sprintf("%.2f", float64(best.Value)/100.0)
+			worstValue := fmt.Sprintf("%.2f", float64(worst.Value)/100.0)
+			settle = fmt.Sprintf(settle,
+				best.User.FirstName, best.User.UserID, bestValue, luckyMoney.Asset,
+				worst.User.FirstName, worst.User.UserID, worstValue, luckyMoney.Asset)
+		}
+	}
+
+	// 更新红包信息
+	message := makeBaseMessage(luckyMoney, received)
+	if len(users) > 0 {
+		message = fmt.Sprintf(tr(fromID, "lng_chat_receive_format"), message, strings.Join(users, ","), settle)
+	}
+	bot.EditReplyMarkupByInlineMessageID(inlineMessageID, message, true, replyMarkup)
+}
+
 // 领取红包
 type ReceiveHandler struct {
 }
@@ -26,7 +95,7 @@ func (handler *ReceiveHandler) Handle(bot *methods.BotExt, r *history.History, u
 }
 
 // 处理红包错误
-func (handler *ReceiveHandler) handleReceiveError(bot *methods.BotExt, query *types.CallbackQuery,
+func (handler *ReceiveHandler) answerReceiveError(bot *methods.BotExt, query *types.CallbackQuery,
 	id uint64, err error) {
 
 	// 没有红包
@@ -56,7 +125,7 @@ func (handler *ReceiveHandler) handleReceiveError(bot *methods.BotExt, query *ty
 
 	// 红包过期
 	if err == models.ErrLuckyMoneydExpired {
-		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_expired"), false, "", 0)
+		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_expired_say"), false, "", 0)
 		return
 	}
 
@@ -67,34 +136,14 @@ func (handler *ReceiveHandler) handleReceiveError(bot *methods.BotExt, query *ty
 
 // 处理领取红包
 func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, query *types.CallbackQuery) {
-	// 是否过期
-	fromID := query.From.ID
-	if query.Data == "expired" {
-		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_expired_say"), false, "", 0)
-		return
-	}
-
-	// 是否结束
-	if query.Data == "removed" {
-		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_nothing_left"), false, "", 0)
-		return
-	}
-
 	// 获取红包ID
+	fromID := query.From.ID
 	model := models.LuckyMoneyModel{}
 	id, err := model.GetLuckyMoneyIDBySN(query.Data)
 	if err != nil {
 		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_invalid_id"), false, "", 0)
 		return
 	}
-
-	// 执行领取红包
-	value, _, err := model.ReceiveLuckyMoney(id, fromID, query.From.FirstName)
-	if err != nil {
-		handler.handleReceiveError(bot, query, id, err)
-		return
-	}
-	logger.Warnf("Receive lucky money, id: %d, user_id: %d, value: %d", id, fromID, value)
 
 	// 获取红包信息
 	luckyMoney, received, err := model.GetLuckyMoney(id)
@@ -104,27 +153,28 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 		return
 	}
 
-	// 获取领取记录
-	size := 0
-	users := make([]string, 0)
-	history, err := model.GetHistory(id)
-	if err != nil {
-		logger.Errorf("Failed to get lucky money history, %v", err)
+	// 是否结束
+	if query.Data == "removed" {
+		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_nothing_left"), false, "", 0)
+		return
 	}
-	serveCfg := config.GetServe()
-	for i := 0; i < len(history); i++ {
-		user := history[i].User
-		message := tr(fromID, "lng_chat_receive_history")
-		amount := fmt.Sprintf("%.2f", float64(history[i].Value)/100)
-		message = fmt.Sprintf(message, user.FirstName, user.UserID, amount, luckyMoney.Asset)
 
-		size += len(message)
-		if size > serveCfg.MaxHistoryTextLen {
-			users = append(users, "...")
-			break
-		}
-		users = append(users, message)
+	// 是否过期
+	if query.Data == "expired" {
+		bot.AnswerCallbackQuery(query, tr(fromID, "lng_chat_expired_say"), false, "", 0)
+		return
 	}
+
+	// 执行领取红包
+	value, _, err := model.ReceiveLuckyMoney(id, fromID, query.From.FirstName)
+	if err != nil {
+		handler.answerReceiveError(bot, query, id, err)
+		if err == models.ErrLuckyMoneydExpired {
+			ReplyLuckyMoneyInfo(bot, fromID, *query.InlineMessageID, luckyMoney, received, true)
+		}
+		return
+	}
+	logger.Warnf("Receive lucky money, id: %d, user_id: %d, value: %d", id, fromID, value)
 
 	// 更新资产信息
 	accountModel := models.AccountModel{}
@@ -153,39 +203,6 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 	alert = fmt.Sprintf(alert, fmt.Sprintf("%.2f", float64(value)/100), luckyMoney.Asset, bot.UserName)
 	bot.AnswerCallbackQuery(query, alert, true, "", 0)
 
-	// 更新按钮信息
-	menus := make([]methods.InlineKeyboardButton, 0)
-	if received == luckyMoney.Number {
-		menus = append(menus, methods.InlineKeyboardButton{
-			Text:         tr(fromID, "lng_chat_finished"),
-			CallbackData: "removed",
-		})
-	} else {
-		menus = append(menus, methods.InlineKeyboardButton{
-			Text:         tr(fromID, "lng_chat_receive"),
-			CallbackData: luckyMoney.SN,
-		})
-	}
-	replyMarkup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
-
-	// 手气结果统计
-	settle := ""
-	if received == luckyMoney.Number {
-		best, worst, err := model.GetBestAndWorst(id)
-		if err == nil && luckyMoney.Number > 1 && luckyMoney.Lucky {
-			settle = tr(fromID, "lng_chat_receive_settle")
-			bestValue := fmt.Sprintf("%.2f", float64(best.Value)/100.0)
-			worstValue := fmt.Sprintf("%.2f", float64(worst.Value)/100.0)
-			settle = fmt.Sprintf(settle,
-				best.User.FirstName, best.User.UserID, bestValue, luckyMoney.Asset,
-				worst.User.FirstName, worst.User.UserID, worstValue, luckyMoney.Asset)
-		}
-	}
-
-	// 更新红包信息
-	message := makeBaseMessage(luckyMoney, received)
-	if len(users) > 0 {
-		message = fmt.Sprintf(tr(fromID, "lng_chat_receive_format"), message, strings.Join(users, ","), settle)
-	}
-	bot.EditReplyMarkupByInlineMessageID(*query.InlineMessageID, message, true, replyMarkup)
+	// 回复红包信息
+	ReplyLuckyMoneyInfo(bot, fromID, *query.InlineMessageID, luckyMoney, received, false)
 }

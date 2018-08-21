@@ -12,6 +12,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/inspector"
 	"github.com/zhangpanyi/luckymoney/app/logic/algo"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
@@ -482,7 +483,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	data, err := luckyMoneyModel.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
 	if err != nil {
 		// 解锁资金
-		if err = model.UnlockAccount(userID, serveCfg.Symbol, amount); err != nil {
+		if _, err := model.UnlockAccount(userID, serveCfg.Symbol, amount); err != nil {
 			logger.Errorf("Failed to unlock asset, user_id: %v, asset: %v, amount: %v",
 				userID, serveCfg.Symbol, amount)
 		}
@@ -501,6 +502,9 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 		Reason:          models.ReasonGive,
 		RefLuckyMoneyID: &luckyMoney.ID,
 	})
+
+	// 添加到检查队列
+	inspector.AddToQueue(luckyMoney.ID, luckyMoney.Timestamp)
 
 	return data, nil
 }

@@ -209,15 +209,15 @@ func (model *AccountModel) LockAccount(userID int64, symbol string, amount uint3
 }
 
 // 解锁账户
-func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uint32) error {
+func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uint32) (*Account, error) {
+	var account Account
 	key := strconv.FormatInt(userID, 10)
-	return storage.DB.Update(func(tx *bolt.Tx) error {
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
 		if err != nil {
 			return err
 		}
 
-		var account Account
 		jsb := bucket.Get([]byte(symbol))
 		if jsb == nil {
 			return ErrNoSuchTypeAccount
@@ -243,6 +243,11 @@ func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uin
 		}
 		return nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &account, nil
 }
 
 // 从锁定账户转账

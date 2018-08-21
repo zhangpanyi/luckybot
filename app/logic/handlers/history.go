@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -84,6 +85,11 @@ func (handler *HistoryHandler) makeHistoryMessage(fromID int64, version *models.
 		message := tr(fromID, "lng_history_receive")
 		return fmt.Sprintf(message, *version.RefUserName,
 			*version.RefUserID, *version.RefLuckyMoneyID, float64(version.Balance)/100, version.Symbol)
+	case models.ReasonGiveBack:
+		// 退还红包
+		message := tr(fromID, "lng_history_giveback")
+		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
+			math.Abs(float64(version.Locked))/100, version.Symbol)
 	}
 	return ""
 }

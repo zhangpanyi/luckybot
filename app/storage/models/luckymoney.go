@@ -201,8 +201,28 @@ func (model *LuckyMoneyModel) IsExpired(id uint64) bool {
 
 // 设置过期
 func (model *LuckyMoneyModel) SetExpired(id uint64) error {
+	// 获取红包信息
+	luckyMoney, _, err := model.GetLuckyMoney(id)
+	if err != nil {
+		return nil
+	}
+	sender := strconv.FormatInt(luckyMoney.SenderID, 10)
+
 	sid := strconv.FormatUint(id, 10)
 	return storage.DB.Update(func(tx *bolt.Tx) error {
+		// 删除用户索引
+		index, err := storage.GetBucketIfExists(tx, "luckymoney", "index", sender)
+		if err != nil {
+			if err != storage.ErrNoBucket {
+				return err
+			}
+			return nil
+		}
+		if err = index.Delete([]byte(sid)); err != nil {
+			return err
+		}
+
+		// 标记红包过期
 		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
 		if err != nil {
 			return err

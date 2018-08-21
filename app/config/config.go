@@ -18,10 +18,12 @@ type Serve struct {
 	Port              int    `yaml:"port"`                 // HTTP端口
 	APIWebsite        string `yaml:"api_website"`          // API服务站点
 	Token             string `yaml:"token"`                // 机器人token
+	Name              string `yaml:"name"`                 // 资产名称
 	Symbol            string `yaml:"symbol"`               // 资产符号
 	Address           string `yaml:"address"`              // 充值地址
 	BolTDBPath        string `yaml:"boltdb_path"`          // BoltDB路径
 	Languages         string `yaml:"languages"`            // 语言配置路径
+	Expire            uint32 `yaml:"expire"`               // 红包过期时间
 	MaxMessageLen     int    `yaml:"max_message_len"`      // 最大留言长度
 	MaxHistoryTextLen int    `yaml:"max_history_text_len"` // 历史文本长度
 	ThumbURL          string `yaml:"thumb_url"`            // 红包缩略图URL

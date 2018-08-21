@@ -37,7 +37,7 @@
     "lng_new_benediction": "恭喜发财，大吉大利",
     "lng_new_failed": "很抱歉😅，创建红包过程出现问题，请稍后重试。",
     "lng_new_waiting": "红包正在生成中...",
-    "lng_new_created": "恭喜您😁，红包已创建成功，快快点击下方 【发送红包】 按钮发送给朋友吧。\n\n在任意聊天输入框中输入 `@%s list` 可以查看您创建的红包列表喔。\n\n`注意：如果超过24小时内未被领取，将被自动退回。`",
+    "lng_new_created": "恭喜您😁，红包已创建成功，快快点击下方 【发送红包】 按钮发送给朋友吧。\n\n在任意聊天输入框中输入 `@%s list` 可以查看您创建的红包列表喔。\n\n`注意：如果超过24小时内未被发出或者领取，将被自动退回。`",
     "lng_send_luckymoney": "发送红包",
     "lng_luckymoney_item": "[%s]\n金额: %s/%s %s, 数量: %d/%d",
     "lng_luckymoney_info": "🎁 *%d %s(%d/%d)*\n\n用户 [[@%s](tg://user?id=%d)] 发放了一个价值 *%s %s* 的%s，赶快来领取吧。\n\n红包留言：`%s`",
@@ -56,5 +56,6 @@
     "lng_chat_receive_format": "%s\n\n--------------------\n%s%s",
     "lng_history_no_op": "您当前还没有任何操作记录。",
     "lng_history_give": "您发放了红包(*%d*), 花费 *%.2f %s*",
-    "lng_history_receive": "您领取了 [[@%s](tg://user?id=%d)] 发放的红包(*%d*), 获得 *%.2f %s*"
+    "lng_history_receive": "您领取了 [[@%s](tg://user?id=%d)] 发放的红包(*%d*), 获得 *%.2f %s*",
+    "lng_history_giveback": "您创建的红包(*%d*)已过期, 退还剩余金额 *%.2f %s*"
 }
