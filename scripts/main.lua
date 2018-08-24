@@ -1,6 +1,4 @@
-local http = require("http")
-
--- 时钟循环
+-- 时钟事件
 function on_tick(delaytime)
 end
 
@@ -11,9 +9,7 @@ end
 
 -- 接收提现请求
 function on_withdraw(to, symbol, amount, future)
-    print('on_withdraw', to, symbol, amount, future)
     future:set_result(nil)
-    -- future:set_result('failed to transfer')
 end
 
 -- 交易是否有效

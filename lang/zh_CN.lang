@@ -75,5 +75,5 @@
     "lng_withdraw_submit_ok": "📨 提现(*3*/3)\n\n 您的提现申请已提交，请耐心等待处理结果。",
     "lng_withdraw_submit_ok_answer": "您的提现申请已提交，请耐心等待处理结果。",
     "lng_withdraw_success": "恭喜😁，您的提现申请已通过。正在打币中，请注意查收。\n\n`注意：待区块确认后可以在主菜单历史记录里查询。`",
-    "lng_withdraw_transfer_error": "很抱歉😅，由于转账过程中发生错误，提现失败，请稍后再试。"
+    "lng_withdraw_transfer_error": "很抱歉😅，由于转账过程中发生错误，提现失败。请稍后再试。"
 }

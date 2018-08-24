@@ -336,14 +336,14 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 	model := models.AccountModel{}
 	account, err := model.LockAccount(fromID, serverCfg.Symbol, info.amount+uint32(fee*100))
 	if err != nil {
-		logger.Warnf("Failed to withdraw asset, UserID: %d, Asset: %s, Amount: %d, Fee: %.2f, %v",
+		logger.Warnf("Failed to withdraw asset, user: %d, asset: %s, amount: %d, Fee: %.2f, %v",
 			fromID, serverCfg.Symbol, info.amount, fee, err)
 		reply := tr(fromID, "lng_withdraw_not_enough")
 		bot.AnswerCallbackQuery(query, reply, false, "", 0)
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
 	}
-	logger.Errorf("Withdraw asset success, UserID: %d, Asset: %s, Amount: %d, Fee: %.2f",
+	logger.Errorf("Withdraw asset success, user: %d, asset: %s, amount: %d, fee: %.2f",
 		fromID, serverCfg.Symbol, info.amount, fee)
 
 	// 提交成功
@@ -369,7 +369,7 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount, f.ID())
 	if err = f.GetResult(); err != nil {
 		reply := tr(fromID, "lng_withdraw_transfer_error")
-		logger.Warnf("Failed to transfer, UserID: %d, Asset: %s, Amount: %d, Fee: %.2f, %v",
+		logger.Warnf("Failed to transfer, user: %d, asset: %s, amount: %d, fee: %.2f, %v",
 			fromID, serverCfg.Symbol, info.amount, fee, err)
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
