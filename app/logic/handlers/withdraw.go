@@ -11,6 +11,8 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/future"
+	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
 
@@ -224,8 +226,8 @@ func (handler *WithdrawHandler) handleEnterWithdrawAccout(bot *methods.BotExt, r
 		bot.SendMessage(fromID, reply, true, markup)
 	}
 
-	// 检查帐号长度
-	if len(account) == 0 || len(account) > 32 {
+	// 检查帐号合法
+	if !scriptengine.Engine.ValidAccount(account) {
 		handlerError(tr(fromID, "lng_withdraw_account_error"))
 		return
 	}
@@ -360,6 +362,18 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 		Reason:     models.ReasonWithdraw,
 		RefAddress: &info.account,
 	})
+
+	// 执行提现操作
+	f := future.Manager.NewFuture()
+	amount := strconv.FormatFloat(float64(info.amount)/100, 'f', 2, 64)
+	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount, f.ID())
+	if err = f.GetResult(); err != nil {
+		reply := tr(fromID, "lng_withdraw_transfer_error")
+		logger.Warnf("Failed to transfer, UserID: %d, Asset: %s, Amount: %d, Fee: %.2f, %v",
+			fromID, serverCfg.Symbol, info.amount, fee, err)
+		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
+		return
+	}
 
 	// 返回处理结果
 	reply = tr(fromID, "lng_withdraw_success")

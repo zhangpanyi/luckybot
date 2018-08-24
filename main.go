@@ -10,9 +10,11 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/updater"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/future"
 	"github.com/zhangpanyi/luckymoney/app/inspector"
 	"github.com/zhangpanyi/luckymoney/app/logic"
 	"github.com/zhangpanyi/luckymoney/app/logic/context"
+	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 	"github.com/zhangpanyi/luckymoney/app/poller"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 )
@@ -31,8 +33,14 @@ func main() {
 		logger.Panic(err)
 	}
 
-	// 消息上下文管理
-	context.CreateManagerForOnce(16)
+	// 状态上下文管理
+	context.CreateManagerOnce(16)
+
+	// 创建Future管理器
+	future.NewFutureManagerOnce()
+
+	// 创建Lua脚本引擎
+	scriptengine.NewScriptEngineOnce()
 
 	// 创建机器人轮询器
 	poller := poll.NewPoller(serveCfg.APIWebsite)

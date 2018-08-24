@@ -11,7 +11,7 @@ var once sync.Once
 var manager *history.Manager
 
 // 创建记录管理器
-func CreateManagerForOnce(bucketNum uint32) {
+func CreateManagerOnce(bucketNum uint32) {
 	once.Do(func() {
 		var err error
 		manager, err = history.NewManager(bucketNum)
