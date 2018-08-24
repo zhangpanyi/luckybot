@@ -7,6 +7,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 )
 
 // 存款
@@ -17,7 +18,11 @@ type DepositHandler struct {
 func (*DepositHandler) Handle(bot *methods.BotExt, r *history.History, update *types.Update) {
 	serveCfg := config.GetServe()
 	fromID := update.CallbackQuery.From.ID
-	reply := fmt.Sprintf(tr(fromID, "lng_deposit_say"), serveCfg.Name, serveCfg.Symbol, serveCfg.Address, fromID)
+	address, memo := scriptengine.Engine.DepositAddress(fromID)
+	if len(memo) == 0 {
+		memo = tr(fromID, "lng_deposit_ignore")
+	}
+	reply := fmt.Sprintf(tr(fromID, "lng_deposit_say"), serveCfg.Name, serveCfg.Symbol, address, memo)
 	menus := [...]methods.InlineKeyboardButton{
 		methods.InlineKeyboardButton{
 			Text:         tr(fromID, "lng_back_superior"),

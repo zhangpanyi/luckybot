@@ -227,7 +227,7 @@ func (handler *WithdrawHandler) handleEnterWithdrawAccout(bot *methods.BotExt, r
 	}
 
 	// 检查帐号合法
-	if !scriptengine.Engine.ValidAccount(account) {
+	if !scriptengine.Engine.ValidAddress(account) {
 		handlerError(tr(fromID, "lng_withdraw_account_error"))
 		return
 	}

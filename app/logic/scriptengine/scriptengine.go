@@ -20,23 +20,3 @@ func NewScriptEngineOnce() {
 		}
 	})
 }
-
-// // 事件循环
-// func (glue *LuaGlue) eventLoop() {
-// 	lasttime := time.Now()
-// 	duration := 100 * time.Millisecond
-// 	timer := time.NewTimer(duration)
-// 	for {
-// 		select {
-// 		case <-timer.C:
-// 			now := time.Now()
-// 			glue.OnTick(now.Sub(lasttime).Seconds())
-// 			lasttime = now
-// 			timer.Reset(duration)
-// 		}
-
-// 		if glue.closed {
-// 			break
-// 		}
-// 	}
-// }

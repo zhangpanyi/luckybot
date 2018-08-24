@@ -22,9 +22,6 @@ name: "测试币"
 # 资产符号
 symbol: "SYS"
 
-# 充值地址
-address: "address"
-
 # 提现手续费
 withdraw_fee: 1
 
