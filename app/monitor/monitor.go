@@ -1,4 +1,4 @@
-package inspector
+package monitor
 
 import (
 	"container/heap"
@@ -14,7 +14,7 @@ import (
 )
 
 var once sync.Once
-var inspector *Inspector
+var monitor *Monitor
 
 // 开始检查
 func StartChecking(bot *methods.BotExt, pool *updater.Pool) {
@@ -37,30 +37,30 @@ func StartChecking(bot *methods.BotExt, pool *updater.Pool) {
 
 		// 初始化红包检查器
 		serverCfg := config.GetServe()
-		inspector = &Inspector{
+		monitor = &Monitor{
 			h:      h,
 			bot:    bot,
 			pool:   pool,
 			expire: serverCfg.Expire,
 		}
-		go inspector.loop()
+		go monitor.loop()
 	})
 }
 
 // 获取机器人
 func GetBot() *methods.BotExt {
-	return inspector.bot
+	return monitor.bot
 }
 
 // 添加红包
 func AddToQueue(id uint64, timestamp int64) {
-	inspector.lock.Lock()
-	defer inspector.lock.Unlock()
-	heap.Push(&inspector.h, expire{ID: id, Timestamp: timestamp})
+	monitor.lock.Lock()
+	defer monitor.lock.Unlock()
+	heap.Push(&monitor.h, expire{ID: id, Timestamp: timestamp})
 }
 
 // 检查员
-type Inspector struct {
+type Monitor struct {
 	h      heapExpire
 	bot    *methods.BotExt
 	pool   *updater.Pool
@@ -69,7 +69,7 @@ type Inspector struct {
 }
 
 // 事件循环
-func (t *Inspector) loop() {
+func (t *Monitor) loop() {
 	tickTimer := time.NewTimer(time.Second)
 	for {
 		select {
@@ -81,7 +81,7 @@ func (t *Inspector) loop() {
 }
 
 // 处理过期红包
-func (t *Inspector) handleLuckyMoneyExpire() {
+func (t *Monitor) handleLuckyMoneyExpire() {
 	var id uint64
 	t.lock.RLock()
 	now := time.Now().UTC().Unix()
@@ -118,7 +118,7 @@ func (t *Inspector) handleLuckyMoneyExpire() {
 }
 
 // 异步处理过期红包
-func (t *Inspector) asyncHandleLuckyMoneyExpire(id uint64) {
+func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 	// 设置红包过期
 	model := models.LuckyMoneyModel{}
 	if model.IsExpired(id) {

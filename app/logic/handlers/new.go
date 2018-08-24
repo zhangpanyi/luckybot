@@ -12,8 +12,8 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/inspector"
 	"github.com/zhangpanyi/luckymoney/app/logic/algo"
+	"github.com/zhangpanyi/luckymoney/app/monitor"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
 
@@ -504,7 +504,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	})
 
 	// 添加到检查队列
-	inspector.AddToQueue(luckyMoney.ID, luckyMoney.Timestamp)
+	monitor.AddToQueue(luckyMoney.ID, luckyMoney.Timestamp)
 
 	return data, nil
 }

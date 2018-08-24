@@ -11,10 +11,10 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/updater"
 	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/future"
-	"github.com/zhangpanyi/luckymoney/app/inspector"
 	"github.com/zhangpanyi/luckymoney/app/logic"
 	"github.com/zhangpanyi/luckymoney/app/logic/context"
 	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
+	"github.com/zhangpanyi/luckymoney/app/monitor"
 	"github.com/zhangpanyi/luckymoney/app/poller"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 )
@@ -52,7 +52,7 @@ func main() {
 
 	// 启动红包检查器
 	pool := updater.NewPool(64)
-	inspector.StartChecking(bot, pool)
+	monitor.StartChecking(bot, pool)
 
 	// 启动HTTP服务器
 	router := mux.NewRouter()
