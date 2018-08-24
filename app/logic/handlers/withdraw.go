@@ -290,7 +290,7 @@ func (handler *WithdrawHandler) replyWithdrawOverview(bot *methods.BotExt, r *hi
 	fee := serverCfg.WithdrawFee
 	reply := tr(fromID, "lng_withdraw_overview")
 	amount := fmt.Sprintf("%.2f", float64(info.amount)/100.0)
-	reply = fmt.Sprintf(reply, info.account, serverCfg.Symbol, serverCfg.Symbol,
+	reply = fmt.Sprintf(reply, info.account, amount, serverCfg.Symbol,
 		amount, fee, serverCfg.Symbol, fee, serverCfg.Symbol)
 
 	// 生成菜单按钮
@@ -334,17 +334,18 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 
 	// 扣除余额
 	model := models.AccountModel{}
+	amount := strconv.FormatFloat(float64(info.amount)/100, 'f', 2, 64)
 	account, err := model.LockAccount(fromID, serverCfg.Symbol, info.amount+uint32(fee*100))
 	if err != nil {
-		logger.Warnf("Failed to withdraw asset, user: %d, asset: %s, amount: %d, Fee: %.2f, %v",
-			fromID, serverCfg.Symbol, info.amount, fee, err)
+		logger.Warnf("Failed to withdraw, user: %d, asset: %s, amount: %s, Fee: %.2f, %v",
+			fromID, serverCfg.Symbol, amount, fee, err)
 		reply := tr(fromID, "lng_withdraw_not_enough")
 		bot.AnswerCallbackQuery(query, reply, false, "", 0)
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
 	}
-	logger.Errorf("Withdraw asset success, user: %d, asset: %s, amount: %d, fee: %.2f",
-		fromID, serverCfg.Symbol, info.amount, fee)
+	logger.Errorf("Withdraw success, user: %d, asset: %s, amount: %s, fee: %.2f",
+		fromID, serverCfg.Symbol, amount, fee)
 
 	// 提交成功
 	reply := tr(fromID, "lng_withdraw_submit_ok")
@@ -365,12 +366,11 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 
 	// 执行提现操作
 	f := future.Manager.NewFuture()
-	amount := strconv.FormatFloat(float64(info.amount)/100, 'f', 2, 64)
 	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount, f.ID())
 	if err = f.GetResult(); err != nil {
 		reply := tr(fromID, "lng_withdraw_transfer_error")
-		logger.Warnf("Failed to transfer, user: %d, asset: %s, amount: %d, fee: %.2f, %v",
-			fromID, serverCfg.Symbol, info.amount, fee, err)
+		logger.Warnf("Failed to transfer, user: %d, asset: %s, amount: %s, fee: %.2f, %v",
+			fromID, serverCfg.Symbol, amount, fee, err)
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
 	}
