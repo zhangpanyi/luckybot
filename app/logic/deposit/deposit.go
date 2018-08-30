@@ -2,6 +2,7 @@ package deposit
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math/big"
 	"net/http"
@@ -24,6 +25,15 @@ type DepositRequest struct {
 	Memo   string `json:"memo"`   // 备注信息
 }
 
+// 生成错误响应
+func makeErrorRespone(reason string) []byte {
+	object := map[string]string{
+		"error": reason,
+	}
+	jsb, _ := json.Marshal(&object)
+	return jsb
+}
+
 // 充值处理
 func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	// 读取数据
@@ -31,6 +41,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	jsb, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone(fmt.Sprintf("invalid body, %v", err)))
 		return
 	}
 
@@ -38,6 +49,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	var request DepositRequest
 	if err = json.Unmarshal(jsb, &request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone(fmt.Sprintf("invalid request, %v", err)))
 		return
 	}
 
@@ -45,6 +57,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	depositModel := models.DepositModel{}
 	if depositModel.Exist(request.TxID) {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone("repeat deposit"))
 		return
 	}
 
@@ -55,6 +68,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("Failed to deposit, invalid transaction, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s",
 			request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone("invalid transaction"))
 		return
 	}
 
@@ -63,6 +77,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		logger.Infof("Failed to deposit, amount invalid, amount: %s", request.Amount)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone("invalid amount"))
 		return
 	}
 
@@ -71,6 +86,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Infof("Failed to deposit, not found user id from memo, memo: %s, %v", request.Memo, err)
 		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone("not found user"))
 		return
 	}
 
@@ -79,6 +95,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("Failed to deposit, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s, %v",
 			request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(makeErrorRespone("repeat deposit"))
 		return
 	}
 
@@ -89,6 +106,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 		logger.Infof("Failed to deposit, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s, %v",
 			request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo, err)
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(makeErrorRespone(fmt.Sprintf("deposit failure, %v", err)))
 		return
 	}
 
@@ -102,6 +120,5 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 		RefTxID:        &request.TxID,
 		RefBlockHeight: &request.Height,
 	})
-
 	w.WriteHeader(http.StatusOK)
 }

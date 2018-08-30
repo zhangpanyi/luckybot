@@ -13,6 +13,7 @@ import (
 	"github.com/zhangpanyi/luckymoney/app/future"
 	"github.com/zhangpanyi/luckymoney/app/logic"
 	"github.com/zhangpanyi/luckymoney/app/logic/context"
+	"github.com/zhangpanyi/luckymoney/app/logic/deposit"
 	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 	"github.com/zhangpanyi/luckymoney/app/monitor"
 	"github.com/zhangpanyi/luckymoney/app/poller"
@@ -56,6 +57,7 @@ func main() {
 
 	// 启动HTTP服务器
 	router := mux.NewRouter()
+	router.HandleFunc("/deposit", deposit.HandleDeposit)
 	addr := serveCfg.Host + ":" + strconv.Itoa(serveCfg.Port)
 	go func() {
 		s := &http.Server{
