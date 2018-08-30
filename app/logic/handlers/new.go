@@ -479,7 +479,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	// 锁定资金
 	serveCfg := config.GetServe()
 	model := models.AccountModel{}
-	acount, err := model.LockAccount(userID, serveCfg.Symbol, amount)
+	account, err := model.LockAccount(userID, serveCfg.Symbol, amount)
 	if err != nil {
 		return nil, err
 	}
@@ -519,7 +519,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	versionModel.InsertVersion(userID, &models.Version{
 		Symbol:          serveCfg.Symbol,
 		Locked:          amount,
-		Amount:          acount.Amount,
+		Amount:          account.Amount,
 		Reason:          models.ReasonGive,
 		RefLuckyMoneyID: &luckyMoney.ID,
 	})

@@ -28,14 +28,13 @@ function on_withdraw(to, symbol, amount, future)
 end
 
 -- 交易是否有效
--- @param userid <string> 关联用户ID
+-- @param txid <string> 交易ID
 -- @param from <string> 来源地址
 -- @param to <string> 目标地址
 -- @param symbol <string> 货币符号
 -- @param amount <string> 交易金额
 -- @param memo <string> 备注信息
--- @param txid <string> 交易ID
 -- @return <boolean>
-function valid_transaction(userid, from, to, symbol, amount, memo, txid)
+function valid_transaction(txid, from, to, symbol, amount, memo)
     return true
 end

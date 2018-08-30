@@ -91,7 +91,7 @@ func (handler *HistoryHandler) makeHistoryMessage(fromID int64, version *models.
 		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
 			version.Locked.Abs(version.Locked).String(), version.Symbol)
 	case models.ReasonDeposit:
-		// 提现成功
+		// 充值代币
 		message := tr(fromID, "lng_history_deposit")
 		return fmt.Sprintf(message, version.Balance.String(), version.Symbol,
 			*version.RefBlockHeight, *version.RefTxID)

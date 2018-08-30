@@ -132,7 +132,7 @@ func (glue *LuaGlue) OnWithdraw(to, symbol, amount, id string) {
 }
 
 // 交易是否有效
-func (glue *LuaGlue) ValidTransaction(userID int64, from, to, symbol, amount, memo, txid string) bool {
+func (glue *LuaGlue) ValidTransaction(txid, from, to, symbol, amount, memo string) bool {
 	fn := glue.state.GetGlobal("valid_transaction")
 	if fn == nil {
 		return false
@@ -142,8 +142,8 @@ func (glue *LuaGlue) ValidTransaction(userID int64, from, to, symbol, amount, me
 		Fn:      fn,
 		NRet:    1,
 		Protect: true,
-	}, lua.LString(strconv.FormatInt(userID, 10)), lua.LString(from), lua.LString(to),
-		lua.LString(symbol), lua.LString(amount), lua.LString(memo), lua.LString(txid))
+	}, lua.LString(txid), lua.LString(from), lua.LString(to), lua.LString(symbol),
+		lua.LString(amount), lua.LString(memo))
 
 	ret := glue.state.Get(-1)
 	defer glue.state.Pop(1)

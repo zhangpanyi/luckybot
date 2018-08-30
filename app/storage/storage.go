@@ -2,7 +2,6 @@ package storage
 
 import (
 	"errors"
-
 	"io"
 
 	"github.com/boltdb/bolt"
