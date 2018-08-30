@@ -6,9 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"math"
+	"math/big"
 	"strconv"
 
 	"github.com/boltdb/bolt"
+	"github.com/zhangpanyi/luckymoney/app/fmath"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
@@ -17,19 +19,19 @@ const DefaultLuckyMoneyID = 100000
 
 // 红包信息
 type LuckyMoney struct {
-	ID         uint64 `json:"id"`          // 红包ID
-	SN         string `json:"sn"`          // 唯一编号
-	SenderID   int64  `json:"sneder_id"`   // 发送者
-	SenderName string `json:"sneder_name"` // 发送者名字
-	Asset      string `json:"asset"`       // 资产类型
-	Amount     uint32 `json:"amount"`      // 红包总额
-	Received   uint32 `json:"received"`    // 领取金额
-	Number     uint32 `json:"number"`      // 红包个数
-	Lucky      bool   `json:"lucky"`       // 是否随机
-	Value      uint32 `json:"value"`       // 单个价值
-	Active     bool   `json:"active"`      // 是否激活
-	Message    string `json:"message"`     // 红包留言
-	Timestamp  int64  `json:"timestamp"`   // 时间戳
+	ID         uint64     `json:"id"`          // 红包ID
+	SN         string     `json:"sn"`          // 唯一编号
+	SenderID   int64      `json:"sneder_id"`   // 发送者
+	SenderName string     `json:"sneder_name"` // 发送者名字
+	Asset      string     `json:"asset"`       // 资产类型
+	Amount     *big.Float `json:"amount"`      // 红包金额
+	Received   *big.Float `json:"received"`    // 领取金额
+	Number     uint32     `json:"number"`      // 红包个数
+	Lucky      bool       `json:"lucky"`       // 是否随机
+	Value      *big.Float `json:"value"`       // 单个价值
+	Active     bool       `json:"active"`      // 是否激活
+	Message    string     `json:"message"`     // 红包留言
+	Timestamp  int64      `json:"timestamp"`   // 时间戳
 }
 
 // 红包用户
@@ -40,7 +42,7 @@ type LuckyMoneyUser struct {
 
 // 红包记录
 type LuckyMoneyHistory struct {
-	Value int             `json:"value"`          // 红包金额
+	Value *big.Float      `json:"value"`          // 红包金额
 	User  *LuckyMoneyUser `json:"user,omitempty"` // 用户信息
 }
 
@@ -92,7 +94,7 @@ type LuckyMoneyModel struct {
 }
 
 // 创建新红包
-func (model *LuckyMoneyModel) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []int) (*LuckyMoney, error) {
+func (model *LuckyMoneyModel) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []*big.Float) (*LuckyMoney, error) {
 	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		// 生成红包ID
 		rootBucket, err := storage.EnsureBucketExists(tx, "luckymoney")
@@ -117,7 +119,7 @@ func (model *LuckyMoneyModel) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []in
 		data.SN = sn
 
 		// 序列化数据
-		data.Received = 0
+		data.Received = big.NewFloat(0)
 		data.Active = false
 		jsb, err := json.Marshal(data)
 		if err != nil {
@@ -351,18 +353,18 @@ func (model *LuckyMoneyModel) GetLuckyMoneyIDBySN(sn string) (uint64, error) {
 }
 
 // 领取红包
-func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstName string) (int, int, error) {
+func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstName string) (*big.Float, int, error) {
 	received, err := model.IsReceived(id, userID)
 	if err != nil {
-		return 0, 0, err
+		return nil, 0, err
 	}
 
 	if received {
-		return 0, 0, ErrRepeatReceive
+		return nil, 0, ErrRepeatReceive
 	}
 
-	value := 0
 	count := 0
+	value := big.NewFloat(0)
 	sid := strconv.FormatUint(id, 10)
 	err = storage.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid)
@@ -416,7 +418,7 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 		if err != nil {
 			return err
 		}
-		base.Received += uint32(value)
+		base.Received = fmath.Add(base.Received, value)
 
 		// 更新红包信息
 		if jsb, err = json.Marshal(&base); err != nil {
@@ -434,7 +436,7 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 
 		// 删除用户索引
 		sender := strconv.FormatInt(base.SenderID, 10)
-		if base.Received >= base.Number {
+		if uint32(newSeq) >= base.Number {
 			index, err := storage.GetBucketIfExists(tx, "luckymoney", "index", sender)
 			if err != nil {
 				if err != storage.ErrNoBucket {
@@ -452,7 +454,7 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 	})
 
 	if err != nil {
-		return 0, 0, err
+		return nil, 0, err
 	}
 	return value, count, nil
 }
@@ -646,10 +648,10 @@ func (model *LuckyMoneyModel) generateSN(tx *bolt.Tx, id uint64) (string, error)
 }
 
 // 创建领取记录
-func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyArr []int) (int, int, error) {
+func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyArr []*big.Float) (int, int, error) {
 
 	worstSeq, bestSeq := 0, 0
-	minValue, maxValue := math.MaxInt32, 0
+	minValue, maxValue := big.NewFloat(math.MaxFloat64), big.NewFloat(0)
 	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid, "history")
 	if err != nil {
 		return 0, 0, err
@@ -672,12 +674,12 @@ func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyA
 			return 0, 0, err
 		}
 
-		if luckyMoneyArr[i] < minValue {
+		if luckyMoneyArr[i].Cmp(minValue) == -1 {
 			minValue = luckyMoneyArr[i]
 			worstSeq = int(seq)
 		}
 
-		if luckyMoneyArr[i] > maxValue {
+		if luckyMoneyArr[i].Cmp(maxValue) == 1 {
 			maxValue = luckyMoneyArr[i]
 			bestSeq = int(seq)
 		}
@@ -686,28 +688,28 @@ func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyA
 }
 
 // 领取红包
-func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (int, error) {
+func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (*big.Float, error) {
 
 	bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "history")
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	var history LuckyMoneyHistory
 	key := []byte(strconv.Itoa(seq))
 	jsb := bucket.Get(key)
 	if err = json.Unmarshal(jsb, &history); err != nil {
-		return 0, err
+		return nil, err
 	}
 	history.User = user
 
 	jsb, err = json.Marshal(&history)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 
 	if err = bucket.Put(key, jsb); err != nil {
-		return 0, err
+		return nil, err
 	}
 	return history.Value, nil
 }

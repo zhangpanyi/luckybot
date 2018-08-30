@@ -29,8 +29,7 @@ func ReplyLuckyMoneyInfo(bot *methods.BotExt, fromID int64, inlineMessageID stri
 	for i := 0; i < len(history); i++ {
 		user := history[i].User
 		message := tr(fromID, "lng_chat_receive_history")
-		amount := fmt.Sprintf("%.2f", float64(history[i].Value)/100)
-		message = fmt.Sprintf(message, user.FirstName, user.UserID, amount, luckyMoney.Asset)
+		message = fmt.Sprintf(message, user.FirstName, user.UserID, history[i].Value.String(), luckyMoney.Asset)
 
 		size += len(message)
 		if size > serveCfg.MaxHistoryTextLen {
@@ -66,11 +65,9 @@ func ReplyLuckyMoneyInfo(bot *methods.BotExt, fromID int64, inlineMessageID stri
 		best, worst, err := model.GetBestAndWorst(luckyMoney.ID)
 		if err == nil && luckyMoney.Number > 1 && luckyMoney.Lucky {
 			settle = tr(fromID, "lng_chat_receive_settle")
-			bestValue := fmt.Sprintf("%.2f", float64(best.Value)/100.0)
-			worstValue := fmt.Sprintf("%.2f", float64(worst.Value)/100.0)
 			settle = fmt.Sprintf(settle,
-				best.User.FirstName, best.User.UserID, bestValue, luckyMoney.Asset,
-				worst.User.FirstName, worst.User.UserID, worstValue, luckyMoney.Asset)
+				best.User.FirstName, best.User.UserID, best.Value.String(), luckyMoney.Asset,
+				worst.User.FirstName, worst.User.UserID, worst.Value.String(), luckyMoney.Asset)
 		}
 	}
 
@@ -174,15 +171,15 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 		}
 		return
 	}
-	logger.Warnf("Receive lucky money, id: %d, user_id: %d, value: %d", id, fromID, value)
+	logger.Warnf("Receive lucky money, id: %d, user_id: %d, value: %s", id, fromID, value.String())
 
 	// 更新资产信息
 	accountModel := models.AccountModel{}
 	_, toAccount, err := accountModel.TransferFromLockAccount(luckyMoney.SenderID, fromID,
-		luckyMoney.Asset, uint32(value))
+		luckyMoney.Asset, value)
 	if err != nil {
-		logger.Fatalf("Failed to transfer from lock account, from: %d, to: %d, asset: %s, amount: %d, %v",
-			fromID, fromID, luckyMoney.Asset, value, err)
+		logger.Fatalf("Failed to transfer from lock account, from: %d, to: %d, asset: %s, amount: %s, %v",
+			fromID, fromID, luckyMoney.Asset, value.String(), err)
 		return
 	}
 
@@ -190,7 +187,7 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 	versionModel := models.AccountVersionModel{}
 	versionModel.InsertVersion(fromID, &models.Version{
 		Symbol:          luckyMoney.Asset,
-		Balance:         int32(value),
+		Balance:         value,
 		Amount:          toAccount.Amount,
 		Reason:          models.ReasonReceive,
 		RefLuckyMoneyID: &luckyMoney.ID,
@@ -200,9 +197,9 @@ func (handler *ReceiveHandler) handleReceiveLuckyMoney(bot *methods.BotExt, quer
 
 	// 发送领取通知
 	alert := tr(0, "lng_chat_receive_success")
-	alert = fmt.Sprintf(alert, fmt.Sprintf("%.2f", float64(value)/100), luckyMoney.Asset, bot.UserName)
+	alert = fmt.Sprintf(alert, value.String(), luckyMoney.Asset, bot.UserName)
 	bot.AnswerCallbackQuery(query, alert, true, "", 0)
 
 	// 回复红包信息
-	ReplyLuckyMoneyInfo(bot, fromID, *query.InlineMessageID, luckyMoney, received, false)
+	ReplyLuckyMoneyInfo(bot, fromID, *query.InlineMessageID, luckyMoney, received+1, false)
 }

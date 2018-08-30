@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -25,22 +26,22 @@ const (
 
 // 版本信息
 type Version struct {
-	ID              int64   `json:"id"`                           // 版本ID
-	Symbol          string  `json:"symbol"`                       // 代币符号
-	Balance         int32   `json:"balance"`                      // 余额变化
-	Locked          int32   `json:"locked"`                       // 锁定变化
-	Fee             uint32  `json:"fee"`                          // 手续费
-	Amount          uint32  `json:"amount"`                       // 剩余金额
-	Timestamp       int64   `json:"Timestamp"`                    // 时间戳
-	Reason          Reason  `json:"reason"`                       // 触发原因
-	RefLuckyMoneyID *uint64 `json:"ref_lucky_money_id,omitempty"` // 关联红包ID
-	RefBlockHeight  *uint64 `json:"ref_block_height,omitempty"`   // 关联区块高度
-	RefTxID         *string `json:"ref_tx_id,omitempty"`          // 关联交易ID
-	RefUserID       *int64  `json:"ref_user_id,omitempty"`        // 关联用户ID
-	RefUserName     *string `json:"ref_user_name,omitempty"`      // 关联用户名
-	RefOrderID      *string `json:"ref_order_id,omitempty"`       // 关联订单ID
-	RefAddress      *string `json:"ref_address,omitempty"`        // 关联地址
-	RefMemo         *string `json:"ref_memo,omitempty"`           // 关联备注信息
+	ID              int64      `json:"id"`                           // 版本ID
+	Symbol          string     `json:"symbol"`                       // 代币符号
+	Balance         *big.Float `json:"balance"`                      // 余额变化
+	Locked          *big.Float `json:"locked"`                       // 锁定变化
+	Fee             *big.Float `json:"fee"`                          // 手续费
+	Amount          *big.Float `json:"amount"`                       // 剩余金额
+	Timestamp       int64      `json:"Timestamp"`                    // 时间戳
+	Reason          Reason     `json:"reason"`                       // 触发原因
+	RefLuckyMoneyID *uint64    `json:"ref_lucky_money_id,omitempty"` // 关联红包ID
+	RefBlockHeight  *uint64    `json:"ref_block_height,omitempty"`   // 关联区块高度
+	RefTxID         *string    `json:"ref_tx_id,omitempty"`          // 关联交易ID
+	RefUserID       *int64     `json:"ref_user_id,omitempty"`        // 关联用户ID
+	RefUserName     *string    `json:"ref_user_name,omitempty"`      // 关联用户名
+	RefOrderID      *string    `json:"ref_order_id,omitempty"`       // 关联订单ID
+	RefAddress      *string    `json:"ref_address,omitempty"`        // 关联地址
+	RefMemo         *string    `json:"ref_memo,omitempty"`           // 关联备注信息
 }
 
 // ********************** 结构图 **********************

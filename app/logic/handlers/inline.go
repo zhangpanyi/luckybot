@@ -7,6 +7,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/fmath"
 	"github.com/zhangpanyi/luckymoney/app/location"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
@@ -128,8 +129,8 @@ func makeLuckyMoneyInfo(luckyMoney *models.LuckyMoney, received uint32, idx int)
 	reply := tr(luckyMoney.SenderID, "lng_luckymoney_item")
 	result.Description = fmt.Sprintf(reply,
 		luckyMoneysTypeToString(luckyMoney.SenderID, tag),
-		fmt.Sprintf("%.2f", float64(luckyMoney.Amount-luckyMoney.Received)/100.0),
-		fmt.Sprintf("%.2f", float64(luckyMoney.Amount)/100.0),
+		fmath.Sub(luckyMoney.Amount, luckyMoney.Received).String(),
+		luckyMoney.Amount.String(),
 		serveCfg.Symbol,
 		luckyMoney.Number-received,
 		luckyMoney.Number,

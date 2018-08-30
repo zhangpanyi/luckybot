@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/fmath"
 	"github.com/zhangpanyi/luckymoney/app/future"
 	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
@@ -49,8 +51,8 @@ type WithdrawHandler struct {
 
 // 取款信息
 type withdrawInfo struct {
-	account string // 账户名
-	amount  uint32 // 资产数量
+	account string  // 账户名
+	amount  float64 // 资产数量
 }
 
 // 消息处理
@@ -66,7 +68,7 @@ func (handler *WithdrawHandler) Handle(bot *methods.BotExt, r *history.History, 
 	result := reMathWithdrawAmount.FindStringSubmatch(data)
 	if len(result) == 2 {
 		amount, _ := strconv.ParseFloat(result[1], 10)
-		info.amount = uint32(amount * 100)
+		info.amount = amount
 		handler.replyEnterAccout(bot, r, info, update, true)
 		return
 	}
@@ -75,7 +77,7 @@ func (handler *WithdrawHandler) Handle(bot *methods.BotExt, r *history.History, 
 	result = reMathWithdrawAccout.FindStringSubmatch(data)
 	if len(result) == 3 {
 		amount, _ := strconv.ParseFloat(result[1], 10)
-		info.amount = uint32(amount * 100)
+		info.amount = amount
 		info.account = result[2]
 		handler.replyWithdrawOverview(bot, r, info, update, true)
 		return
@@ -85,7 +87,7 @@ func (handler *WithdrawHandler) Handle(bot *methods.BotExt, r *history.History, 
 	result = reMathWithdrawSubmit.FindStringSubmatch(data)
 	if len(result) == 3 {
 		amount, _ := strconv.ParseFloat(result[1], 10)
-		info.amount = uint32(amount * 100)
+		info.amount = amount
 		info.account = result[2]
 		handler.handleWithdraw(bot, r, info, update.CallbackQuery)
 		return
@@ -119,7 +121,7 @@ func (handler *WithdrawHandler) handleEnterWithdrawAmount(bot *methods.BotExt, r
 	}
 
 	// 获取账户余额
-	var balance uint32
+	balance := big.NewFloat(0)
 	serverCfg := config.GetServe()
 	model := models.AccountModel{}
 	account, err := model.GetAccount(fromID, serverCfg.Symbol)
@@ -128,35 +130,34 @@ func (handler *WithdrawHandler) handleEnterWithdrawAmount(bot *methods.BotExt, r
 	}
 
 	// 检查输入金额
-	fee := serverCfg.WithdrawFee
 	result := strings.Split(amount, ".")
+	fee := big.NewFloat(serverCfg.WithdrawFee)
 	if len(result) == 2 && len(result[1]) > 2 {
 		reply := tr(fromID, "lng_withdraw_amount_not_enough")
-		handlerError(fmt.Sprintf(reply, fmt.Sprintf("%.2f", float64(balance)/100),
-			serverCfg.Symbol, fee, serverCfg.Symbol))
+		handlerError(fmt.Sprintf(reply, balance.String(),
+			serverCfg.Symbol, fee.String(), serverCfg.Symbol))
 		return
 	}
 
 	fAmount, err := strconv.ParseFloat(amount, 10)
 	if err != nil {
 		reply := tr(fromID, "lng_withdraw_amount_not_enough")
-		handlerError(fmt.Sprintf(reply, fmt.Sprintf("%.2f", float64(balance)/100),
-			serverCfg.Symbol, fee, serverCfg.Symbol))
+		handlerError(fmt.Sprintf(reply, balance.String(),
+			serverCfg.Symbol, fee.String(), serverCfg.Symbol))
 		return
 	}
 
 	// 检查用户余额
-	lAmount := uint32(fAmount * 100)
-	if err != nil || account.Amount < (lAmount+uint32(fee*100)) {
+	if err != nil || account.Amount.Cmp(fmath.Add(big.NewFloat(fAmount), fee)) == -1 {
 		reply := tr(fromID, "lng_withdraw_amount_error")
-		handlerError(fmt.Sprintf(reply, fmt.Sprintf("%.2f", float64(balance)/100),
-			serverCfg.Symbol, fee, serverCfg.Symbol))
+		handlerError(fmt.Sprintf(reply, balance.String(),
+			serverCfg.Symbol, fee.String(), serverCfg.Symbol))
 		return
 	}
 
 	// 更新下个操作状态
 	r.Clear()
-	info.amount = lAmount
+	info.amount = fAmount
 	update.CallbackQuery.Data = data + amount + "/"
 	handler.replyEnterAccout(bot, r, info, update, false)
 }
@@ -185,7 +186,7 @@ func (handler *WithdrawHandler) replyEnterWithdrawAmount(bot *methods.BotExt, r 
 	markup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
 
 	// 获取账户余额
-	var balance uint32
+	balance := big.NewFloat(0)
 	serverCfg := config.GetServe()
 	model := models.AccountModel{}
 	account, err := model.GetAccount(fromID, serverCfg.Symbol)
@@ -194,10 +195,10 @@ func (handler *WithdrawHandler) replyEnterWithdrawAmount(bot *methods.BotExt, r 
 	}
 
 	// 回复提现操作提示
-	fee := serverCfg.WithdrawFee
+	fee := big.NewFloat(serverCfg.WithdrawFee)
 	reply := tr(fromID, "lng_withdraw_enter_amount")
-	reply = fmt.Sprintf(reply, fmt.Sprintf("%.2f", float64(balance)/100),
-		serverCfg.Symbol, fee, serverCfg.Symbol)
+	reply = fmt.Sprintf(reply, balance.String(),
+		serverCfg.Symbol, fee.String(), serverCfg.Symbol)
 	bot.EditMessageReplyMarkup(query.Message, reply, true, markup)
 
 	answer := tr(fromID, "lng_withdraw_enter_amount_answer")
@@ -265,7 +266,7 @@ func (handler *WithdrawHandler) replyEnterAccout(bot *methods.BotExt, r *history
 	r.Clear().Push(update)
 	serverCfg := config.GetServe()
 	reply := tr(fromID, "lng_withdraw_enter_account")
-	reply = fmt.Sprintf(reply, fmt.Sprintf("%.2f", float64(info.amount)/100.0), serverCfg.Symbol, serverCfg.Name)
+	reply = fmt.Sprintf(reply, big.NewFloat(info.amount).String(), serverCfg.Symbol, serverCfg.Name)
 	if !edit {
 		bot.SendMessage(fromID, reply, true, markup)
 	} else {
@@ -287,11 +288,11 @@ func (handler *WithdrawHandler) replyWithdrawOverview(bot *methods.BotExt, r *hi
 
 	// 格式化信息
 	serverCfg := config.GetServe()
-	fee := serverCfg.WithdrawFee
+	amount := big.NewFloat(info.amount)
+	fee := big.NewFloat(serverCfg.WithdrawFee)
 	reply := tr(fromID, "lng_withdraw_overview")
-	amount := fmt.Sprintf("%.2f", float64(info.amount)/100.0)
-	reply = fmt.Sprintf(reply, info.account, amount, serverCfg.Symbol,
-		amount, fee, serverCfg.Symbol, fee, serverCfg.Symbol)
+	reply = fmt.Sprintf(reply, info.account, amount.String(), serverCfg.Symbol,
+		amount.String(), fee.String(), serverCfg.Symbol, fee.String(), serverCfg.Symbol)
 
 	// 生成菜单按钮
 	menus := [...]methods.InlineKeyboardButton{
@@ -330,22 +331,22 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 
 	// 获取手续费
 	serverCfg := config.GetServe()
-	fee := serverCfg.WithdrawFee
+	fee := big.NewFloat(serverCfg.WithdrawFee)
 
 	// 扣除余额
 	model := models.AccountModel{}
-	amount := strconv.FormatFloat(float64(info.amount)/100, 'f', 2, 64)
-	account, err := model.LockAccount(fromID, serverCfg.Symbol, info.amount+uint32(fee*100))
+	amount := big.NewFloat(info.amount)
+	account, err := model.LockAccount(fromID, serverCfg.Symbol, fmath.Add(amount, fee))
 	if err != nil {
-		logger.Warnf("Failed to withdraw, user: %d, asset: %s, amount: %s, Fee: %.2f, %v",
-			fromID, serverCfg.Symbol, amount, fee, err)
+		logger.Warnf("Failed to withdraw, user: %d, asset: %s, amount: %s, fee: %s, %v",
+			fromID, serverCfg.Symbol, amount.String(), fee.String(), err)
 		reply := tr(fromID, "lng_withdraw_not_enough")
 		bot.AnswerCallbackQuery(query, reply, false, "", 0)
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
 	}
-	logger.Errorf("Withdraw success, user: %d, asset: %s, amount: %s, fee: %.2f",
-		fromID, serverCfg.Symbol, amount, fee)
+	logger.Errorf("Withdraw success, user: %d, asset: %s, amount: %s, fee: %s",
+		fromID, serverCfg.Symbol, amount.String(), fee.String())
 
 	// 提交成功
 	reply := tr(fromID, "lng_withdraw_submit_ok")
@@ -357,8 +358,8 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 	versionModel := models.AccountVersionModel{}
 	versionModel.InsertVersion(fromID, &models.Version{
 		Symbol:     serverCfg.Symbol,
-		Locked:     int32(info.amount),
-		Fee:        uint32(fee * 100),
+		Locked:     amount,
+		Fee:        fee,
 		Amount:     account.Amount,
 		Reason:     models.ReasonWithdraw,
 		RefAddress: &info.account,
@@ -366,11 +367,11 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 
 	// 执行提现操作
 	f := future.Manager.NewFuture()
-	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount, f.ID())
+	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount.String(), f.ID())
 	if err = f.GetResult(); err != nil {
 		reply := tr(fromID, "lng_withdraw_transfer_error")
-		logger.Warnf("Failed to transfer, user: %d, asset: %s, amount: %s, fee: %.2f, %v",
-			fromID, serverCfg.Symbol, amount, fee, err)
+		logger.Warnf("Failed to transfer, user: %d, asset: %s, amount: %s, fee: %s, %v",
+			fromID, serverCfg.Symbol, amount.String(), fee.String(), err)
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
 	}

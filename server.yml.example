@@ -22,6 +22,9 @@ name: "测试币"
 # 资产符号
 symbol: "SYS"
 
+# 资产精度
+precision: 4
+
 # 提现手续费
 withdraw_fee: 1
 

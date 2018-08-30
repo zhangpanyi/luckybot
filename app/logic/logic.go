@@ -1,6 +1,8 @@
 package logic
 
 import (
+	"math/big"
+
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
@@ -49,8 +51,8 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 	serverCfg := config.GetServe()
 	accountModel := models.AccountModel{}
 	balance, err := accountModel.GetAccount(fromID, serverCfg.Symbol)
-	if err != nil || balance.Amount == 0 {
-		amount := uint32(100 * 100)
+	if err != nil || balance.Amount.Cmp(big.NewFloat(0)) <= 0 {
+		amount := big.NewFloat(100)
 		account, err := accountModel.Deposit(fromID, serverCfg.Symbol, amount)
 		if err == nil {
 			var height uint64
@@ -58,7 +60,7 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 			versionModel := models.AccountVersionModel{}
 			versionModel.InsertVersion(fromID, &models.Version{
 				Symbol:         serverCfg.Symbol,
-				Balance:        int32(amount),
+				Balance:        amount,
 				Amount:         account.Amount,
 				Reason:         models.ReasonDeposit,
 				RefBlockHeight: &height,

@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/fmath"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
 
@@ -20,9 +22,9 @@ func makeBaseMessage(luckyMoney *models.LuckyMoney, received uint32) string {
 	}
 	message := tr(luckyMoney.SenderID, "lng_luckymoney_info")
 	typ := luckyMoneysTypeToString(luckyMoney.SenderID, tag)
-	amount := fmt.Sprintf("%.2f", float64(luckyMoney.Amount)/100.0)
+	amount := luckyMoney.Amount.String()
 	if !luckyMoney.Lucky {
-		amount = fmt.Sprintf("%.2f", float64(luckyMoney.Amount*luckyMoney.Number)/100.0)
+		amount = fmath.Mul(luckyMoney.Amount, big.NewFloat(float64(luckyMoney.Number))).String()
 	}
 	return fmt.Sprintf(message, luckyMoney.ID, typ, luckyMoney.Number-received, luckyMoney.Number,
 		luckyMoney.SenderName, luckyMoney.SenderID,

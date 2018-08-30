@@ -20,6 +20,7 @@ type Serve struct {
 	Token             string  `yaml:"token"`                // 机器人token
 	Name              string  `yaml:"name"`                 // 资产名称
 	Symbol            string  `yaml:"symbol"`               // 资产符号
+	Precision         int     `yaml:"precision"`            // 资产精度
 	WithdrawFee       float64 `yaml:"withdraw_fee"`         // 提现手续费
 	BolTDBPath        string  `yaml:"boltdb_path"`          // BoltDB路径
 	Languages         string  `yaml:"languages"`            // 语言配置路径

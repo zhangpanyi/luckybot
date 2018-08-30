@@ -22,7 +22,8 @@ func (*DepositHandler) Handle(bot *methods.BotExt, r *history.History, update *t
 	if len(memo) == 0 {
 		memo = tr(fromID, "lng_deposit_ignore")
 	}
-	reply := fmt.Sprintf(tr(fromID, "lng_deposit_say"), serveCfg.Name, serveCfg.Symbol, address, memo)
+	reply := fmt.Sprintf(tr(fromID, "lng_deposit_say"), serveCfg.Name, serveCfg.Symbol,
+		address, memo, serveCfg.Precision)
 	menus := [...]methods.InlineKeyboardButton{
 		methods.InlineKeyboardButton{
 			Text:         tr(fromID, "lng_back_superior"),

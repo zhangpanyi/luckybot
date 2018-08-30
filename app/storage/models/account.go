@@ -3,17 +3,18 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"math/big"
 	"strconv"
 
 	"github.com/boltdb/bolt"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 )
 
-// 账户信息
+// 账户数据
 type Account struct {
-	Symbol string `json:"symbol"` // 货币符号
-	Amount uint32 `json:"amount"` // 资产金额
-	Locked uint32 `json:"locked"` // 锁定金额
+	Symbol string     `json:"symbol"` // 货币符号
+	Amount *big.Float `json:"amount"` // 资产金额
+	Locked *big.Float `json:"locked"` // 锁定金额
 }
 
 var (
@@ -72,7 +73,7 @@ func (model *AccountModel) GetAccounts(userID int64) ([]*Account, error) {
 
 // 获取账户信息
 func (model *AccountModel) GetAccount(userID int64, symbol string) (*Account, error) {
-	var acount Account
+	var account Account
 	key := strconv.FormatInt(userID, 10)
 	err := storage.DB.View(func(tx *bolt.Tx) error {
 		bucket, err := storage.GetBucketIfExists(tx, "accounts", key)
@@ -85,7 +86,7 @@ func (model *AccountModel) GetAccount(userID int64, symbol string) (*Account, er
 			return ErrNoSuchTypeAccount
 		}
 
-		if err = json.Unmarshal(jsb, &acount); err != nil {
+		if err = json.Unmarshal(jsb, &account); err != nil {
 			return err
 		}
 		return nil
@@ -94,12 +95,12 @@ func (model *AccountModel) GetAccount(userID int64, symbol string) (*Account, er
 	if err != nil {
 		return nil, err
 	}
-	return &acount, nil
+	return &account, nil
 }
 
-// 存款
-func (model *AccountModel) Deposit(userID int64, symbol string, amount uint32) (*Account, error) {
-	var acount Account
+// 账户存款操作
+func (model *AccountModel) Deposit(userID int64, symbol string, amount *big.Float) (*Account, error) {
+	var account Account
 	key := strconv.FormatInt(userID, 10)
 	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
@@ -109,16 +110,17 @@ func (model *AccountModel) Deposit(userID int64, symbol string, amount uint32) (
 
 		jsb := bucket.Get([]byte(symbol))
 		if jsb == nil {
-			acount.Symbol = symbol
-			acount.Amount = amount
+			account.Symbol = symbol
+			account.Amount = amount
+			account.Locked = big.NewFloat(0)
 		} else {
-			if err = json.Unmarshal(jsb, &acount); err != nil {
+			if err = json.Unmarshal(jsb, &account); err != nil {
 				return err
 			}
-			acount.Amount += amount
+			account.Amount.Add(account.Amount, amount)
 		}
 
-		jsb, err = json.Marshal(&acount)
+		jsb, err = json.Marshal(&account)
 		if err != nil {
 			return err
 		}
@@ -132,89 +134,11 @@ func (model *AccountModel) Deposit(userID int64, symbol string, amount uint32) (
 	if err != nil {
 		return nil, err
 	}
-	return &acount, nil
+	return &account, nil
 }
 
-// 取款
-func (model *AccountModel) Withdraw(userID int64, symbol string, amount uint32) error {
-	key := strconv.FormatInt(userID, 10)
-	return storage.DB.Update(func(tx *bolt.Tx) error {
-		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
-		if err != nil {
-			return err
-		}
-
-		var acount Account
-		jsb := bucket.Get([]byte(symbol))
-		if jsb == nil {
-			return ErrNoSuchTypeAccount
-		}
-
-		if err = json.Unmarshal(jsb, &acount); err != nil {
-			return err
-		}
-
-		if amount > acount.Amount {
-			return ErrInsufficientAmount
-		}
-		acount.Amount -= amount
-
-		jsb, err = json.Marshal(&acount)
-		if err != nil {
-			return err
-		}
-
-		if err = bucket.Put([]byte(symbol), jsb); err != nil {
-			return err
-		}
-		return nil
-	})
-}
-
-// 锁定账户
-func (model *AccountModel) LockAccount(userID int64, symbol string, amount uint32) (*Account, error) {
-	var acount Account
-	key := strconv.FormatInt(userID, 10)
-	err := storage.DB.Update(func(tx *bolt.Tx) error {
-		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
-		if err != nil {
-			return err
-		}
-
-		jsb := bucket.Get([]byte(symbol))
-		if jsb == nil {
-			return ErrNoSuchTypeAccount
-		}
-
-		if err = json.Unmarshal(jsb, &acount); err != nil {
-			return err
-		}
-
-		if amount > acount.Amount {
-			return ErrInsufficientAmount
-		}
-		acount.Amount -= amount
-		acount.Locked += amount
-
-		jsb, err = json.Marshal(&acount)
-		if err != nil {
-			return err
-		}
-
-		if err = bucket.Put([]byte(symbol), jsb); err != nil {
-			return err
-		}
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-	return &acount, nil
-}
-
-// 解锁账户
-func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uint32) (*Account, error) {
+// 账户取款操作
+func (model *AccountModel) Withdraw(userID int64, symbol string, amount *big.Float) (*Account, error) {
 	var account Account
 	key := strconv.FormatInt(userID, 10)
 	err := storage.DB.Update(func(tx *bolt.Tx) error {
@@ -232,11 +156,94 @@ func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uin
 			return err
 		}
 
-		if amount > account.Locked {
+		if account.Amount.Cmp(amount) == 1 {
 			return ErrInsufficientAmount
 		}
-		account.Amount += amount
-		account.Locked -= amount
+		account.Amount.Sub(account.Amount, amount)
+
+		jsb, err = json.Marshal(&account)
+		if err != nil {
+			return err
+		}
+
+		if err = bucket.Put([]byte(symbol), jsb); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
+// 锁定账户资金
+func (model *AccountModel) LockAccount(userID int64, symbol string, amount *big.Float) (*Account, error) {
+	var account Account
+	key := strconv.FormatInt(userID, 10)
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
+		if err != nil {
+			return err
+		}
+
+		jsb := bucket.Get([]byte(symbol))
+		if jsb == nil {
+			return ErrNoSuchTypeAccount
+		}
+
+		if err = json.Unmarshal(jsb, &account); err != nil {
+			return err
+		}
+
+		if amount.Cmp(account.Amount) == 1 {
+			return ErrInsufficientAmount
+		}
+		account.Locked.Add(account.Locked, amount)
+		account.Amount.Sub(account.Amount, amount)
+
+		jsb, err = json.Marshal(&account)
+		if err != nil {
+			return err
+		}
+
+		if err = bucket.Put([]byte(symbol), jsb); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return &account, nil
+}
+
+// 解锁账户资金
+func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount *big.Float) (*Account, error) {
+	var account Account
+	key := strconv.FormatInt(userID, 10)
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
+		bucket, err := storage.EnsureBucketExists(tx, "accounts", key)
+		if err != nil {
+			return err
+		}
+
+		jsb := bucket.Get([]byte(symbol))
+		if jsb == nil {
+			return ErrNoSuchTypeAccount
+		}
+
+		if err = json.Unmarshal(jsb, &account); err != nil {
+			return err
+		}
+
+		if amount.Cmp(account.Amount) == 1 {
+			return ErrInsufficientAmount
+		}
+		account.Locked.Sub(account.Locked, amount)
+		account.Amount.Add(account.Amount, amount)
 
 		jsb, err = json.Marshal(&account)
 		if err != nil {
@@ -257,7 +264,7 @@ func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount uin
 
 // 从锁定账户转账
 func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string,
-	amount uint32) (*Account, *Account, error) {
+	amount *big.Float) (*Account, *Account, error) {
 
 	var toAccount Account
 	var fromAccount Account
@@ -284,10 +291,10 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 			return err
 		}
 
-		if amount > fromAccount.Locked {
+		if amount.Cmp(fromAccount.Locked) == 1 {
 			return ErrInsufficientAmount
 		}
-		fromAccount.Locked -= amount
+		fromAccount.Locked.Sub(fromAccount.Locked, amount)
 
 		jsb, err = json.Marshal(&fromAccount)
 		if err != nil {
@@ -303,12 +310,12 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 		if jsb == nil {
 			toAccount.Symbol = symbol
 			toAccount.Amount = amount
-			toAccount.Locked = 0
+			toAccount.Locked = big.NewFloat(0)
 		} else {
 			if err = json.Unmarshal(jsb, &toAccount); err != nil {
 				return err
 			}
-			toAccount.Amount += amount
+			toAccount.Amount.Add(toAccount.Amount, amount)
 		}
 
 		jsb, err = json.Marshal(&toAccount)

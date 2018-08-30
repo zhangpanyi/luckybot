@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/fmath"
 	"github.com/zhangpanyi/luckymoney/app/logic/algo"
 	"github.com/zhangpanyi/luckymoney/app/monitor"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
@@ -53,10 +55,10 @@ var (
 
 // 红包信息
 type luckyMoneys struct {
-	typ     string // 红包类型
-	amount  uint32 // 红包金额
-	number  uint32 // 红包个数
-	message string // 红包留言
+	typ     string     // 红包类型
+	amount  *big.Float // 红包金额
+	number  int        // 红包个数
+	message string     // 红包留言
 }
 
 // 红包类型转字符串
@@ -91,11 +93,14 @@ func (handler *NewHandler) Handle(bot *methods.BotExt, r *history.History, updat
 	}
 
 	// 回复输入红包数量
+	var ok bool
 	result = reMathAmount.FindStringSubmatch(data)
 	if len(result) == 3 {
 		info.typ = result[1]
-		amount, _ := strconv.ParseFloat(result[2], 10)
-		info.amount = uint32(amount * 100)
+		info.amount, ok = big.NewFloat(0).SetString(result[2])
+		if !ok {
+			return
+		}
 		handler.replyEnterNumber(bot, r, &info, update, true)
 		return
 	}
@@ -104,10 +109,12 @@ func (handler *NewHandler) Handle(bot *methods.BotExt, r *history.History, updat
 	result = reMathNumber.FindStringSubmatch(data)
 	if len(result) == 4 {
 		info.typ = result[1]
-		amount, _ := strconv.ParseFloat(result[2], 10)
-		info.amount = uint32(amount * 100)
+		info.amount, ok = big.NewFloat(0).SetString(result[2])
+		if !ok {
+			return
+		}
 		number, _ := strconv.Atoi(result[3])
-		info.number = uint32(number)
+		info.number = number
 		handler.replyEnterMessage(bot, r, &info, update)
 		return
 	}
@@ -195,24 +202,23 @@ func (handler *NewHandler) handleEnterAmount(bot *methods.BotExt, r *history.His
 	}
 
 	// 检查输入金额
-	amount, err := strconv.ParseFloat(enterAmount, 10)
-	if err != nil || amount < 0.01 {
-		handlerError(tr(fromID, "lng_new_set_amount_error"))
+	serveCfg := config.GetServe()
+	amount, ok := big.NewFloat(0).SetString(enterAmount)
+	if !ok || amount.Cmp(big.NewFloat(0)) <= 0 {
+		handlerError(fmt.Sprintf(tr(fromID, "lng_new_set_amount_error"), serveCfg.Precision))
 		return
 	}
 
 	// 检查小数点位数
 	s := strings.Split(enterAmount, ".")
-	if len(s) == 2 && len(s[1]) > 2 {
-		handlerError(tr(fromID, "lng_new_set_amount_error"))
+	if len(s) == 2 && len(s[1]) > serveCfg.Precision {
+		handlerError(fmt.Sprintf(tr(fromID, "lng_new_set_amount_error"), serveCfg.Precision))
 		return
 	}
 
 	// 检查帐户余额
-	serveCfg := config.GetServe()
-	balance := getUserAssetAmount(fromID, serveCfg.Symbol)
-	fBalance, _ := strconv.ParseFloat(balance, 10)
-	if amount > fBalance {
+	balance := getUserBalance(fromID, serveCfg.Symbol)
+	if amount.Cmp(balance) == 1 {
 		reply := tr(fromID, "lng_new_set_amount_no_asset")
 		handlerError(fmt.Sprintf(reply, serveCfg.Symbol, balance))
 		return
@@ -220,7 +226,7 @@ func (handler *NewHandler) handleEnterAmount(bot *methods.BotExt, r *history.His
 
 	// 更新下个操作状态
 	r.Clear()
-	info.amount = uint32(amount * 100)
+	info.amount = amount
 	update.CallbackQuery.Data = data + enterAmount + "/"
 	handler.replyEnterNumber(bot, r, info, update, false)
 }
@@ -248,15 +254,24 @@ func (handler *NewHandler) replyEnterAmount(bot *methods.BotExt, r *history.Hist
 		amountDesc = tr(fromID, "lng_new_unit_amount")
 	}
 
-	answer := fmt.Sprintf(tr(fromID, "lng_new_set_amount_answer"), amountDesc)
+	serveCfg := config.GetServe()
+	answer := fmt.Sprintf(tr(fromID, "lng_new_set_amount_answer"), amountDesc, serveCfg.Precision)
 	bot.AnswerCallbackQuery(query, answer, false, "", 0)
 
-	serveCfg := config.GetServe()
 	reply := tr(fromID, "lng_new_set_amount")
-	amount := getUserAssetAmount(fromID, serveCfg.Symbol)
-	reply = fmt.Sprintf(reply, amountDesc, luckyMoneysTypeToString(fromID, info.typ),
-		serveCfg.Symbol, amount)
+	amount := getUserBalance(fromID, serveCfg.Symbol)
+	reply = fmt.Sprintf(reply, amountDesc, serveCfg.Precision, luckyMoneysTypeToString(fromID, info.typ),
+		serveCfg.Symbol, amount.String())
 	bot.EditMessageReplyMarkup(query.Message, reply, true, markup)
+}
+
+// 最低单个金额
+func minSingleAmount() *big.Float {
+	base := big.NewInt(10)
+	serveCfg := config.GetServe()
+	base.Exp(base, big.NewInt(int64(serveCfg.Precision)), nil)
+	wei, _ := big.NewFloat(0).SetString(base.String())
+	return wei.Quo(big.NewFloat(1), wei)
 }
 
 // 处理输入红包个数
@@ -276,31 +291,37 @@ func (handler *NewHandler) handleEnterNumber(bot *methods.BotExt, r *history.His
 	}
 
 	// 检查红包数量
-	number, err := strconv.ParseUint(enterNumber, 10, 32)
+	serveCfg := config.GetServe()
+	number, err := strconv.Atoi(enterNumber)
 	if err != nil {
-		handlerError(tr(fromID, "lng_new_set_number_error"))
+		handlerError(fmt.Sprintf(tr(fromID, "lng_new_set_number_error"), minSingleAmount().String()))
 		return
 	}
 
 	// 检查账户余额
-	serveCfg := config.GetServe()
-	balance := getUserAssetAmount(fromID, serveCfg.Symbol)
-	if info.typ == randLuckyMoney && uint32(number) > info.amount {
-		reply := tr(fromID, "lng_new_set_number_not_enough")
-		handlerError(fmt.Sprintf(reply, serveCfg.Symbol, balance))
-		return
-	}
-
-	fBalance, _ := strconv.ParseFloat(balance, 10)
-	if info.typ == equalLuckyMoney && (info.amount*uint32(number) > uint32(fBalance*100)) {
-		reply := tr(fromID, "lng_new_set_number_not_enough")
-		handlerError(fmt.Sprintf(reply, serveCfg.Symbol, balance))
-		return
+	balance := getUserBalance(fromID, serveCfg.Symbol)
+	if info.typ == equalLuckyMoney {
+		if fmath.Mul(info.amount, big.NewFloat(float64(number))).Cmp(balance) == 1 {
+			reply := tr(fromID, "lng_new_set_number_not_enough")
+			handlerError(fmt.Sprintf(reply, serveCfg.Symbol, balance.String()))
+			return
+		}
+	} else if info.typ == randLuckyMoney {
+		base := big.NewInt(10)
+		base.Exp(base, big.NewInt(int64(serveCfg.Precision)), nil)
+		wei, _ := big.NewFloat(0).SetString(base.String())
+		product := fmath.Mul(wei, info.amount)
+		unit, _ := product.Int(big.NewInt(0))
+		if unit.Cmp(big.NewInt(int64(number))) == -1 {
+			reply := tr(fromID, "lng_new_set_number_not_enough")
+			handlerError(fmt.Sprintf(reply, serveCfg.Symbol, balance.String()))
+			return
+		}
 	}
 
 	// 更新下个操作状态
 	r.Clear()
-	info.number = uint32(number)
+	info.number = number
 	update.CallbackQuery.Data += enterNumber + "/"
 	handler.replyEnterMessage(bot, r, info, update)
 }
@@ -327,11 +348,10 @@ func (handler *NewHandler) replyEnterNumber(bot *methods.BotExt, r *history.Hist
 		amountDesc = tr(fromID, "lng_new_unit_amount")
 	}
 
-	reply := ""
 	serveCfg := config.GetServe()
-	reply = tr(fromID, "lng_new_set_number")
-	reply = fmt.Sprintf(reply, luckyMoneysTypeToString(fromID, info.typ),
-		amountDesc, fmt.Sprintf("%.2f", float64(info.amount)/100.0), serveCfg.Symbol)
+	reply := tr(fromID, "lng_new_set_number")
+	reply = fmt.Sprintf(reply, minSingleAmount().String(), luckyMoneysTypeToString(fromID, info.typ),
+		amountDesc, info.amount.String(), serveCfg.Symbol)
 
 	if !edit {
 		bot.SendMessage(fromID, reply, true, markup)
@@ -426,7 +446,7 @@ func (handler *NewHandler) replyEnterMessage(bot *methods.BotExt, r *history.His
 	serveCfg := config.GetServe()
 	reply := tr(fromID, "lng_new_set_message")
 	reply = fmt.Sprintf(reply, luckyMoneysTypeToString(fromID, info.typ), serveCfg.Symbol,
-		amount, fmt.Sprintf("%.2f", float64(info.amount)/100.0), serveCfg.Symbol, info.number)
+		amount, info.amount.String(), serveCfg.Symbol, info.number)
 	bot.SendMessage(fromID, reply, true, markup)
 	bot.AnswerCallbackQuery(query, tr(fromID, "lng_new_set_message_answer"), false, "", 0)
 }
@@ -436,22 +456,23 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 	info *luckyMoneys) (*models.LuckyMoney, error) {
 
 	// 生成红包
-	amount := info.amount
-	var luckyMoneyArr []int
+	var luckyMoneyArr []*big.Float
+	amount := big.NewFloat(0).Set(info.amount)
 	if info.typ == equalLuckyMoney {
-		amount = info.amount * info.number
+		amount.Mul(amount, big.NewFloat(float64(info.number)))
 	}
 	if info.typ == randLuckyMoney {
 		var err error
-		luckyMoneyArr, err = algo.Generate(amount, info.number)
+		serveCfg := config.GetServe()
+		luckyMoneyArr, err = algo.Generate(amount, serveCfg.Precision, info.number)
 		if err != nil {
 			logger.Errorf("Failed to generate lucky money, user_id: %v, %v", userID, err)
 			return nil, err
 		}
 	} else {
-		luckyMoneyArr = make([]int, 0, info.number)
-		for i := 0; i < int(info.number); i++ {
-			luckyMoneyArr = append(luckyMoneyArr, int(info.amount))
+		luckyMoneyArr = make([]*big.Float, 0, info.number)
+		for i := 0; i < info.number; i++ {
+			luckyMoneyArr = append(luckyMoneyArr, info.amount)
 		}
 	}
 
@@ -463,7 +484,7 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 		return nil, err
 	}
 	logger.Errorf("Lock account, user_id: %v, asset: %v, amount: %v",
-		userID, serveCfg.Symbol, amount)
+		userID, serveCfg.Symbol, amount.String())
 
 	// 保存红包信息
 	luckyMoney := models.LuckyMoney{
@@ -471,13 +492,13 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 		SenderName: firstName,
 		Asset:      serveCfg.Symbol,
 		Amount:     info.amount,
-		Number:     info.number,
+		Number:     uint32(info.number),
 		Message:    info.message,
 		Lucky:      info.typ == randLuckyMoney,
 		Timestamp:  time.Now().UTC().Unix(),
 	}
 	if info.typ == equalLuckyMoney {
-		luckyMoney.Value = info.amount
+		luckyMoney.Value = big.NewFloat(0).Set(info.amount)
 	}
 	luckyMoneyModel := models.LuckyMoneyModel{}
 	data, err := luckyMoneyModel.NewLuckyMoney(&luckyMoney, luckyMoneyArr)
@@ -485,19 +506,19 @@ func (handler *NewHandler) handleGenerateLuckyMoney(userID int64, firstName stri
 		// 解锁资金
 		if _, err := model.UnlockAccount(userID, serveCfg.Symbol, amount); err != nil {
 			logger.Errorf("Failed to unlock asset, user_id: %v, asset: %v, amount: %v",
-				userID, serveCfg.Symbol, amount)
+				userID, serveCfg.Symbol, amount.String())
 		}
 		logger.Errorf("Failed to new lucky money, user_id: %v, %v", userID, err)
 		return nil, err
 	}
 	logger.Errorf("Generate lucky money, id: %v, user_id: %v, asset: %v, amount: %v",
-		data.ID, userID, serveCfg.Symbol, amount)
+		data.ID, userID, serveCfg.Symbol, amount.String())
 
 	// 插入账户记录
 	versionModel := models.AccountVersionModel{}
 	versionModel.InsertVersion(userID, &models.Version{
 		Symbol:          serveCfg.Symbol,
-		Locked:          int32(amount),
+		Locked:          amount,
 		Amount:          acount.Amount,
 		Reason:          models.ReasonGive,
 		RefLuckyMoneyID: &luckyMoney.ID,

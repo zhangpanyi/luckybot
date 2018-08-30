@@ -2,6 +2,7 @@ package monitor
 
 import (
 	"container/heap"
+	"math/big"
 	"sync"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/updater"
 	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckymoney/app/fmath"
 	"github.com/zhangpanyi/luckymoney/app/storage"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
@@ -141,9 +143,10 @@ func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 	}
 
 	// 计算红包余额
-	balance := luckyMoney.Amount - luckyMoney.Received
+	balance := fmath.Sub(luckyMoney.Amount, luckyMoney.Received)
 	if !luckyMoney.Lucky {
-		balance = luckyMoney.Amount*luckyMoney.Number - luckyMoney.Received
+		amount := fmath.Mul(luckyMoney.Amount, big.NewFloat(float64(luckyMoney.Number)))
+		balance.Sub(amount, luckyMoney.Received)
 	}
 
 	// 返还红包余额
@@ -157,10 +160,11 @@ func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 		luckyMoney.SenderID, luckyMoney.Asset, balance)
 
 	// 插入账户记录
+	zero := big.NewFloat(0)
 	version := models.AccountVersionModel{}
 	version.InsertVersion(luckyMoney.SenderID, &models.Version{
 		Symbol:          luckyMoney.Asset,
-		Locked:          -int32(balance),
+		Locked:          zero.Sub(zero, balance),
 		Amount:          account.Amount,
 		Reason:          models.ReasonGiveBack,
 		RefLuckyMoneyID: &luckyMoney.ID,
