@@ -29,6 +29,39 @@ func init() {
 	}
 }
 
+// 生成历史内容
+func MakeHistoryMessage(fromID int64, version *models.Version) string {
+	switch version.Reason {
+	case models.ReasonGive:
+		// 发放红包
+		message := tr(fromID, "lng_history_give")
+		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
+			version.Locked.String(), version.Symbol)
+	case models.ReasonReceive:
+		// 领取红包
+		message := tr(fromID, "lng_history_receive")
+		return fmt.Sprintf(message, *version.RefUserName,
+			*version.RefUserID, *version.RefLuckyMoneyID, version.Balance.String(), version.Symbol)
+	case models.ReasonGiveBack:
+		// 退还红包
+		message := tr(fromID, "lng_history_giveback")
+		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
+			version.Locked.Abs(version.Locked).String(), version.Symbol)
+	case models.ReasonDeposit:
+		// 充值代币
+		message := tr(fromID, "lng_history_deposit")
+		return fmt.Sprintf(message, version.Balance.String(), version.Symbol,
+			*version.RefBlockHeight, *version.RefTxID)
+	case models.ReasonWithdraw:
+		// 提现成功
+		serverCfg := config.GetServe()
+		message := tr(fromID, "lng_history_withdraw")
+		return fmt.Sprintf(message, version.Locked.String(), version.Symbol, serverCfg.Name,
+			*version.RefAddress, version.Fee.String(), version.Symbol)
+	}
+	return ""
+}
+
 // 历史记录
 type HistoryHandler struct {
 }
@@ -72,39 +105,6 @@ func (handler *HistoryHandler) makeMenuList(fromID int64, page, pagesum int) *me
 	return methods.MakeInlineKeyboardMarkupAuto(menus[:], 2)
 }
 
-// 生成历史内容
-func (handler *HistoryHandler) makeHistoryMessage(fromID int64, version *models.Version) string {
-	switch version.Reason {
-	case models.ReasonGive:
-		// 发放红包
-		message := tr(fromID, "lng_history_give")
-		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
-			version.Locked.String(), version.Symbol)
-	case models.ReasonReceive:
-		// 领取红包
-		message := tr(fromID, "lng_history_receive")
-		return fmt.Sprintf(message, *version.RefUserName,
-			*version.RefUserID, *version.RefLuckyMoneyID, version.Balance.String(), version.Symbol)
-	case models.ReasonGiveBack:
-		// 退还红包
-		message := tr(fromID, "lng_history_giveback")
-		return fmt.Sprintf(message, *version.RefLuckyMoneyID,
-			version.Locked.Abs(version.Locked).String(), version.Symbol)
-	case models.ReasonDeposit:
-		// 充值代币
-		message := tr(fromID, "lng_history_deposit")
-		return fmt.Sprintf(message, version.Balance.String(), version.Symbol,
-			*version.RefBlockHeight, *version.RefTxID)
-	case models.ReasonWithdraw:
-		// 提现成功
-		serverCfg := config.GetServe()
-		message := tr(fromID, "lng_history_withdraw")
-		return fmt.Sprintf(message, version.Locked.String(), version.Symbol, serverCfg.Name,
-			*version.RefAddress, version.Fee.String(), version.Symbol)
-	}
-	return ""
-}
-
 // 生成回复内容
 func (handler *HistoryHandler) makeReplyContent(fromID int64, array []*models.Version, page, pagesum uint) string {
 	header := fmt.Sprintf("%s (*%d*/%d)\n\n", tr(fromID, "lng_history"), page, pagesum)
@@ -112,7 +112,7 @@ func (handler *HistoryHandler) makeReplyContent(fromID int64, array []*models.Ve
 		lines := make([]string, 0, len(array))
 		for _, version := range array {
 			date := location.Format(version.Timestamp)
-			lines = append(lines, fmt.Sprintf("`%s` %s", date, handler.makeHistoryMessage(fromID, version)))
+			lines = append(lines, fmt.Sprintf("`%s` %s", date, MakeHistoryMessage(fromID, version)))
 		}
 		return header + strings.Join(lines, "\n\n")
 	}

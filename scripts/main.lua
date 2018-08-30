@@ -15,7 +15,7 @@ end
 -- @return address <string>
 -- @return memo <string or nil>
 function deposit_address(userid)
-    return 'bts', nil
+    return 'test', userid
 end
 
 -- 接收提现请求

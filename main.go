@@ -12,8 +12,10 @@ import (
 	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/future"
 	"github.com/zhangpanyi/luckymoney/app/logic"
+	"github.com/zhangpanyi/luckymoney/app/logic/botext"
 	"github.com/zhangpanyi/luckymoney/app/logic/context"
 	"github.com/zhangpanyi/luckymoney/app/logic/deposit"
+	"github.com/zhangpanyi/luckymoney/app/logic/pusher"
 	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 	"github.com/zhangpanyi/luckymoney/app/monitor"
 	"github.com/zhangpanyi/luckymoney/app/poller"
@@ -49,11 +51,15 @@ func main() {
 	if err != nil {
 		logger.Panic(err)
 	}
+	botext.SetBot(bot)
 	logger.Infof("Lucky money bot id is: %d", bot.ID)
 
 	// 启动红包检查器
 	pool := updater.NewPool(64)
 	monitor.StartChecking(bot, pool)
+
+	// 运行推送服务
+	pusher.ServiceStart(pool)
 
 	// 启动HTTP服务器
 	router := mux.NewRouter()

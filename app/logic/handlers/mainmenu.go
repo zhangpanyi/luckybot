@@ -122,23 +122,23 @@ func (handler *MainMenuHandler) route(bot *methods.BotExt, query *types.Callback
 }
 
 // 获取用户资产数量
-func getUserBalance(userID int64, asset string) *big.Float {
+func getUserBalance(userID int64, asset string) (*big.Float, *big.Float) {
 	model := models.AccountModel{}
 	account, err := model.GetAccount(userID, asset)
 	if err != nil {
 		if err != storage.ErrNoBucket && err != models.ErrNoSuchTypeAccount {
 			logger.Warnf("Failed to get user asset, %v, %v, %v", userID, asset, err)
 		}
-		return big.NewFloat(0)
+		return big.NewFloat(0), big.NewFloat(0)
 	}
-	return account.Amount
+	return account.Amount, account.Locked
 }
 
 // 获取回复消息
 func (handler *MainMenuHandler) replyMessage(userID int64) (string, []methods.InlineKeyboardButton) {
 	// 获取资产信息
 	serveCfg := config.GetServe()
-	amount := getUserBalance(userID, serveCfg.Symbol)
+	amount, locked := getUserBalance(userID, serveCfg.Symbol)
 
 	// 生成菜单列表
 	menus := [...]methods.InlineKeyboardButton{
@@ -150,5 +150,7 @@ func (handler *MainMenuHandler) replyMessage(userID int64) (string, []methods.In
 		methods.InlineKeyboardButton{Text: tr(userID, "lng_share"), CallbackData: "/share/"},
 		methods.InlineKeyboardButton{Text: tr(userID, "lng_help"), CallbackData: "/usage/"},
 	}
-	return fmt.Sprintf(tr(userID, "lng_welcome"), serveCfg.Name, serveCfg.Symbol, amount.String()), menus[:]
+	reply := fmt.Sprintf(tr(userID, "lng_welcome"), serveCfg.Name, serveCfg.Symbol,
+		amount.String(), serveCfg.Symbol, locked.String(), serveCfg.Symbol)
+	return reply, menus[:]
 }

@@ -217,7 +217,7 @@ func (handler *NewHandler) handleEnterAmount(bot *methods.BotExt, r *history.His
 	}
 
 	// 检查帐户余额
-	balance := getUserBalance(fromID, serveCfg.Symbol)
+	balance, _ := getUserBalance(fromID, serveCfg.Symbol)
 	if amount.Cmp(balance) == 1 {
 		reply := tr(fromID, "lng_new_set_amount_no_asset")
 		handlerError(fmt.Sprintf(reply, serveCfg.Symbol, balance))
@@ -259,7 +259,7 @@ func (handler *NewHandler) replyEnterAmount(bot *methods.BotExt, r *history.Hist
 	bot.AnswerCallbackQuery(query, answer, false, "", 0)
 
 	reply := tr(fromID, "lng_new_set_amount")
-	amount := getUserBalance(fromID, serveCfg.Symbol)
+	amount, _ := getUserBalance(fromID, serveCfg.Symbol)
 	reply = fmt.Sprintf(reply, amountDesc, serveCfg.Precision, luckyMoneysTypeToString(fromID, info.typ),
 		serveCfg.Symbol, amount.String())
 	bot.EditMessageReplyMarkup(query.Message, reply, true, markup)
@@ -299,7 +299,7 @@ func (handler *NewHandler) handleEnterNumber(bot *methods.BotExt, r *history.His
 	}
 
 	// 检查账户余额
-	balance := getUserBalance(fromID, serveCfg.Symbol)
+	balance, _ := getUserBalance(fromID, serveCfg.Symbol)
 	if info.typ == equalLuckyMoney {
 		if fmath.Mul(info.amount, big.NewFloat(float64(number))).Cmp(balance) == 1 {
 			reply := tr(fromID, "lng_new_set_number_not_enough")

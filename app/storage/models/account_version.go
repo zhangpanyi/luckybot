@@ -26,7 +26,7 @@ const (
 
 // 版本信息
 type Version struct {
-	ID              int64      `json:"id"`                           // 版本ID
+	ID              uint64     `json:"id"`                           // 版本ID
 	Symbol          string     `json:"symbol"`                       // 代币符号
 	Balance         *big.Float `json:"balance"`                      // 余额变化
 	Locked          *big.Float `json:"locked"`                       // 锁定变化
@@ -58,14 +58,10 @@ type AccountVersionModel struct {
 }
 
 // 插入版本
-func (model *AccountVersionModel) InsertVersion(userID int64, version *Version) error {
-	version.Timestamp = time.Now().UTC().Unix()
-	jsb, err := json.Marshal(version)
-	if err != nil {
-		return err
-	}
+func (model *AccountVersionModel) InsertVersion(userID int64, version *Version) (*Version, error) {
 	key := strconv.FormatInt(userID, 10)
-	err = storage.DB.Update(func(tx *bolt.Tx) error {
+	version.Timestamp = time.Now().UTC().Unix()
+	err := storage.DB.Update(func(tx *bolt.Tx) error {
 		bucket, err := storage.EnsureBucketExists(tx, "account_versions", key)
 		if err != nil {
 			return err
@@ -75,9 +71,20 @@ func (model *AccountVersionModel) InsertVersion(userID int64, version *Version) 
 		if err != nil {
 			return err
 		}
+
+		version.ID = seq
+		jsb, err := json.Marshal(version)
+		if err != nil {
+			return err
+		}
 		return bucket.Put([]byte(strconv.FormatUint(seq, 10)), jsb)
 	})
-	return nil
+
+	if err != nil {
+		return nil, err
+	}
+
+	return version, nil
 }
 
 // 获取版本

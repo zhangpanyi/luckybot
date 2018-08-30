@@ -11,6 +11,8 @@ import (
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 
 	"github.com/zhangpanyi/basebot/logger"
+	"github.com/zhangpanyi/luckymoney/app/logic/handlers"
+	"github.com/zhangpanyi/luckymoney/app/logic/pusher"
 	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
 )
 
@@ -112,7 +114,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 
 	// 写入充值记录
 	versionModel := models.AccountVersionModel{}
-	versionModel.InsertVersion(userID, &models.Version{
+	version, err := versionModel.InsertVersion(userID, &models.Version{
 		Symbol:         request.Asset,
 		Balance:        amount,
 		Amount:         account.Amount,
@@ -120,5 +122,11 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 		RefTxID:        &request.TxID,
 		RefBlockHeight: &request.Height,
 	})
+
+	// 推送充值通知
+	if err == nil {
+		pusher.Post(userID, handlers.MakeHistoryMessage(userID, version), true, nil)
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
