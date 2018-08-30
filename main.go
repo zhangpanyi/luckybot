@@ -9,6 +9,7 @@ import (
 	"github.com/vrecan/death"
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/updater"
+	"github.com/zhangpanyi/luckymoney/app/admin"
 	"github.com/zhangpanyi/luckymoney/app/config"
 	"github.com/zhangpanyi/luckymoney/app/future"
 	"github.com/zhangpanyi/luckymoney/app/logic"
@@ -63,6 +64,7 @@ func main() {
 
 	// 启动HTTP服务器
 	router := mux.NewRouter()
+	admin.InitRoute(router)
 	router.HandleFunc("/deposit", deposit.HandleDeposit)
 	addr := serveCfg.Host + ":" + strconv.Itoa(serveCfg.Port)
 	go func() {

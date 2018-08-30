@@ -27,15 +27,15 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 		if update.Message.Chat.Type != types.ChatPrivate {
 			return
 		}
+
+		// 添加订户
+		model := models.SubscriberModel{}
+		model.AddSubscriber(bot.ID, fromID)
 	} else if update.CallbackQuery != nil {
 		fromID = update.CallbackQuery.From.ID
 	} else {
 		return
 	}
-
-	// 添加订户
-	model := models.SubscriberModel{}
-	model.AddSubscriber(bot.ID, fromID)
 
 	// 获取操作记录
 	r, err := context.GetRecord(uint32(fromID))
