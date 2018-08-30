@@ -24,6 +24,9 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 	var fromID int64
 	if update.Message != nil {
 		fromID = update.Message.From.ID
+		if update.Message.Chat.Type != types.ChatPrivate {
+			return
+		}
 	} else if update.CallbackQuery != nil {
 		fromID = update.CallbackQuery.From.ID
 	} else {
