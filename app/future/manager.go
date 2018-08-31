@@ -27,14 +27,14 @@ func (m *FutureManager) NewFuture() *Future {
 }
 
 // 设置结果
-func (m *FutureManager) SetResult(id string, err error) {
+func (m *FutureManager) SetResult(id, txid string, err error) {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 	future, ok := m.futures[id]
 	if !ok {
 		return
 	}
-	future.SetResult(err)
+	future.SetResult(txid, err)
 	delete(m.futures, id)
 }
 

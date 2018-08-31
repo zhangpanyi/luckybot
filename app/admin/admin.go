@@ -13,8 +13,6 @@ var once sync.Once
 func InitRoute(router *mux.Router) {
 	once.Do(func() {
 		router.HandleFunc("/admin/backup", handlers.Backup)
-		router.HandleFunc("/admin/lock", handlers.Lock)
-		router.HandleFunc("/admin/unlock", handlers.Unlock)
 		router.HandleFunc("/admin/deposit", handlers.Deposit)
 		router.HandleFunc("/admin/balance", handlers.GetBalance)
 		router.HandleFunc("/admin/broadcast", handlers.Broadcast)

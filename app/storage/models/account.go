@@ -156,10 +156,10 @@ func (model *AccountModel) Withdraw(userID int64, symbol string, amount *big.Flo
 			return err
 		}
 
-		if account.Amount.Cmp(amount) == 1 {
+		if account.Locked.Cmp(amount) == 1 {
 			return ErrInsufficientAmount
 		}
-		account.Amount.Sub(account.Amount, amount)
+		account.Locked.Sub(account.Locked, amount)
 
 		jsb, err = json.Marshal(&account)
 		if err != nil {

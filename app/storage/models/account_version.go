@@ -16,12 +16,13 @@ type Reason int
 const (
 	_                     Reason = iota
 	ReasonGive                   // 发红包
+	ReasonSystem                 // 系统发放
 	ReasonReceive                // 领取红包
-	ReasonWithdraw               // 提现
-	ReasonWithdrawFailure        // 提现失败
 	ReasonGiveBack               // 退还红包
 	ReasonDeposit                // 充值
+	ReasonWithdraw               // 提现
 	ReasonWithdrawSuccess        // 提现成功
+	ReasonWithdrawFailure        // 提现失败
 )
 
 // 版本信息
@@ -39,7 +40,6 @@ type Version struct {
 	RefTxID         *string    `json:"ref_tx_id,omitempty"`          // 关联交易ID
 	RefUserID       *int64     `json:"ref_user_id,omitempty"`        // 关联用户ID
 	RefUserName     *string    `json:"ref_user_name,omitempty"`      // 关联用户名
-	RefOrderID      *string    `json:"ref_order_id,omitempty"`       // 关联订单ID
 	RefAddress      *string    `json:"ref_address,omitempty"`        // 关联地址
 	RefMemo         *string    `json:"ref_memo,omitempty"`           // 关联备注信息
 }

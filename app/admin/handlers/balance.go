@@ -16,7 +16,7 @@ type GetBalanceRequest struct {
 	UserID int64 `json:"user_id"` // 用户ID
 }
 
-// 获取余额回复
+// 获取余额响应
 type GetBalanceRespone struct {
 	Amount *big.Float `json:"amount"` // 可用余额
 	Locked *big.Float `json:"locked"` // 锁定金额
@@ -47,8 +47,8 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取账户余额
-	model := models.AccountModel{}
 	serveCfg := config.GetServe()
+	model := models.AccountModel{}
 	account, err := model.GetAccount(request.UserID, serveCfg.Symbol)
 	if err != nil && err != storage.ErrNoBucket {
 		w.WriteHeader(http.StatusInternalServerError)

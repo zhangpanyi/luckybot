@@ -24,7 +24,8 @@ end
 -- @param amount <string> 提现金额
 -- @param future <Future> 异步任务
 function on_withdraw(to, symbol, amount, future)
-    future:set_result(nil)
+    --future:set_result(nil, 'unrealized')
+    future:set_result('txid', nil)
 end
 
 -- 交易是否有效

@@ -30,7 +30,7 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 
 		// 添加订户
 		model := models.SubscriberModel{}
-		model.AddSubscriber(bot.ID, fromID)
+		model.AddSubscriber(fromID)
 	} else if update.CallbackQuery != nil {
 		fromID = update.CallbackQuery.From.ID
 	} else {

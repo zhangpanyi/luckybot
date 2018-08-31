@@ -365,10 +365,33 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 		RefAddress: &info.account,
 	})
 
+	// 开始转账提示
+	reply = tr(fromID, "lng_withdraw_agreed")
+	bot.EditMessageReplyMarkup(query.Message, reply, true, nil)
+
 	// 执行提现操作
+	zero := big.NewFloat(0)
 	f := future.Manager.NewFuture()
 	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount.String(), f.ID())
-	if err = f.GetResult(); err != nil {
+	txid, err := f.GetResult()
+	if err != nil {
+		// 解锁资产
+		account, err := model.UnlockAccount(fromID, serverCfg.Symbol, fmath.Add(amount, fee))
+		if err == nil {
+			versionModel.InsertVersion(fromID, &models.Version{
+				Symbol:     serverCfg.Symbol,
+				Locked:     fmath.Sub(zero, amount),
+				Fee:        fee,
+				Amount:     account.Amount,
+				Reason:     models.ReasonWithdrawFailure,
+				RefAddress: &info.account,
+			})
+		} else {
+			logger.Warnf(`Failed to unlock account when withdraw failure, user: %d, asset: %s, \
+			amount: %s, fee: %s, %v`, fromID, serverCfg.Symbol, amount.String(), fee.String(), err)
+		}
+
+		// 返回信息
 		reply := tr(fromID, "lng_withdraw_transfer_error")
 		logger.Warnf("Failed to transfer, user: %d, asset: %s, amount: %s, fee: %s, %v",
 			fromID, serverCfg.Symbol, amount.String(), fee.String(), err)
@@ -376,8 +399,26 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 		return
 	}
 
+	// 记录提现成功
+	account, err = model.Withdraw(fromID, serverCfg.Symbol, fmath.Add(amount, fee))
+	if err == nil {
+		versionModel.InsertVersion(fromID, &models.Version{
+			Symbol:     serverCfg.Symbol,
+			Balance:    fmath.Sub(zero, fmath.Add(amount, fee)),
+			Locked:     fmath.Sub(zero, amount),
+			Fee:        fee,
+			Amount:     account.Amount,
+			Reason:     models.ReasonWithdrawSuccess,
+			RefAddress: &info.account,
+			RefTxID:    &txid,
+		})
+	} else {
+		logger.Warnf(`Failed to unlock account when withdraw success, user: %d, asset: %s, \
+		amount: %s, fee: %s, %v`, fromID, serverCfg.Symbol, amount.String(), fee.String(), err)
+	}
+
 	// 返回处理结果
 	reply = tr(fromID, "lng_withdraw_success")
-	bot.EditMessageReplyMarkup(query.Message, reply, true, markup)
+	bot.EditMessageReplyMarkup(query.Message, fmt.Sprintf(reply, txid), true, markup)
 	return
 }

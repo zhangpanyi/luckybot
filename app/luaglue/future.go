@@ -22,15 +22,15 @@ func newFuture(state *lua.LState, id string) *lua.LTable {
 func set_result(state *lua.LState) int {
 	self := state.CheckTable(1)
 	id := state.GetField(self, "id").(lua.LString)
-	result := state.Get(2)
-	switch result.Type() {
-	case lua.LTNil:
-		future.Manager.SetResult(string(id), nil)
-	case lua.LTString:
-		reason := string(result.(lua.LString))
-		future.Manager.SetResult(string(id), errors.New(reason))
-	default:
-		future.Manager.SetResult(string(id), errors.New(fmt.Sprintf("%v", result)))
+
+	err := state.Get(-1)
+	txid := state.Get(-2)
+	if err.Type() == lua.LTNil {
+		if txid.Type() == lua.LTString {
+			future.Manager.SetResult(string(id), string(txid.(lua.LString)), nil)
+		}
+	} else {
+		future.Manager.SetResult(string(id), "", errors.New(fmt.Sprintf("%v", err)))
 	}
 	return 0
 }

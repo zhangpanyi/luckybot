@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/zhangpanyi/luckymoney/app/logic/botext"
 	"github.com/zhangpanyi/luckymoney/app/logic/pusher"
 	"github.com/zhangpanyi/luckymoney/app/storage/models"
 )
@@ -46,24 +45,22 @@ func Broadcast(w http.ResponseWriter, r *http.Request) {
 
 	// 广播消息
 	var jsb []byte
-	if botext.GetBot() != nil {
-		model := models.SubscriberModel{}
-		subscribers, err := model.GetSubscribers(botext.GetBot().ID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		for _, userID := range subscribers {
-			pusher.Post(userID, request.Message, true, nil)
-		}
+	model := models.SubscriberModel{}
+	subscribers, err := model.GetSubscribers()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	for _, userID := range subscribers {
+		pusher.Post(userID, request.Message, true, nil)
+	}
 
-		respone := BroadcastRespone{OK: true}
-		jsb, err = json.Marshal(&respone)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Write(makeErrorRespone(err.Error()))
-			return
-		}
+	respone := BroadcastRespone{OK: true}
+	jsb, err = json.Marshal(&respone)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write(makeErrorRespone(err.Error()))
+		return
 	}
 
 	// 返回结果

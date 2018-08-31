@@ -12,11 +12,10 @@ type SubscriberModel struct {
 }
 
 // 获取订阅者
-func (*SubscriberModel) GetSubscribers(botID int64) ([]int64, error) {
+func (*SubscriberModel) GetSubscribers() ([]int64, error) {
 	var subscribers []int64
 	err := storage.DB.View(func(tx *bolt.Tx) error {
-		key := strconv.FormatInt(botID, 10)
-		bucket, err := storage.GetBucketIfExists(tx, "subscriber", key)
+		bucket, err := storage.GetBucketIfExists(tx, "subscribers")
 		if err != nil {
 			if err != storage.ErrNoBucket {
 				return err
@@ -42,10 +41,9 @@ func (*SubscriberModel) GetSubscribers(botID int64) ([]int64, error) {
 }
 
 // 添加订阅者
-func (*SubscriberModel) AddSubscriber(botID, userID int64) error {
+func (*SubscriberModel) AddSubscriber(userID int64) error {
 	return storage.DB.Batch(func(tx *bolt.Tx) error {
-		key := strconv.FormatInt(botID, 10)
-		bucket, err := storage.EnsureBucketExists(tx, "subscriber", key)
+		bucket, err := storage.EnsureBucketExists(tx, "subscribers")
 		if err != nil {
 			return err
 		}
@@ -59,11 +57,10 @@ func (*SubscriberModel) AddSubscriber(botID, userID int64) error {
 }
 
 // 获取订阅者数量
-func (*SubscriberModel) GetSubscriberCount(botID int64) (int, error) {
+func (*SubscriberModel) GetSubscriberCount() (int, error) {
 	var count int
 	err := storage.DB.View(func(tx *bolt.Tx) error {
-		key := strconv.FormatInt(botID, 10)
-		bucket, err := storage.EnsureBucketExists(tx, "subscriber", key)
+		bucket, err := storage.EnsureBucketExists(tx, "subscribers")
 		if err != nil {
 			return err
 		}
