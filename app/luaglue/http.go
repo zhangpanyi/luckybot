@@ -9,15 +9,12 @@ import (
 	lua "github.com/yuin/gopher-lua"
 )
 
-// 导出函数
-var exports = map[string]lua.LGFunction{
-	"get":  get,
-	"post": post,
-}
-
 // 加载模块
 func HttpLoader(state *lua.LState) int {
-	mod := state.SetFuncs(state.NewTable(), exports)
+	mod := state.SetFuncs(state.NewTable(), map[string]lua.LGFunction{
+		"get":  get,
+		"post": post,
+	})
 	state.Push(mod)
 	return 1
 }

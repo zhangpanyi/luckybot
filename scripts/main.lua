@@ -1,3 +1,6 @@
+local http = require("http");
+local json = require("json");
+
 -- 时钟事件
 -- @param delaytime <number>
 function on_tick(delaytime)
@@ -38,3 +41,11 @@ end
 function valid_transaction(txid, from, to, symbol, amount, memo)
     return true
 end
+
+
+local t = {"Lua", "Tutorial"}
+t['a'] = 1324
+t['b'] = 'sadaasd'
+t['c'] = true
+t['d'] = nil
+print(json:dump(t))

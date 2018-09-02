@@ -17,6 +17,7 @@ type LuaGlue struct {
 func NewLuaGlue() (*LuaGlue, error) {
 	state := lua.NewState()
 	state.PreloadModule("http", HttpLoader)
+	state.PreloadModule("json", JsonLoader)
 	if err := state.DoFile("scripts/main.lua"); err != nil {
 		return nil, err
 	}
