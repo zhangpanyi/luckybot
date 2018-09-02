@@ -53,7 +53,7 @@ func main() {
 		logger.Panic(err)
 	}
 	botext.SetBot(bot)
-	logger.Infof("Lucky money bot id is: %d", bot.ID)
+	logger.Infof("Lucky money bot id: %d", bot.ID)
 
 	// 启动红包检查器
 	pool := updater.NewPool(64)
@@ -83,6 +83,6 @@ func main() {
 		syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGALRM)
 	d.WaitForDeathWithFunc(func() {
 		storage.Close()
-		logger.Info("Lucky money server stoped")
+		logger.Infof("Lucky money server stoped")
 	})
 }
