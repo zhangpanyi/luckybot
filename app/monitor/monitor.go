@@ -9,10 +9,10 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/updater"
-	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/fmath"
-	"github.com/zhangpanyi/luckymoney/app/storage"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/fmath"
+	"github.com/zhangpanyi/luckybot/app/storage"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 var once sync.Once

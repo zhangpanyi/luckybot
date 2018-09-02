@@ -11,7 +11,7 @@ languages: "lang"
 boltdb_path: "master.db"
 
 # API服务站点
-api_website: "http://tg.docauthor.com/"
+api_website: "http://api.smartbot.site/"
 
 # 机器人token
 token: "TELEGRAM_BOT_TOKEN"

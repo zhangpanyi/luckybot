@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/gorilla/mux"
-	"github.com/zhangpanyi/luckymoney/app/admin/handlers"
+	"github.com/zhangpanyi/luckybot/app/admin/handlers"
 )
 
 var once sync.Once

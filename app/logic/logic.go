@@ -6,10 +6,10 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/logic/context"
-	"github.com/zhangpanyi/luckymoney/app/logic/handlers"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/logic/context"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 机器人更新

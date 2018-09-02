@@ -6,10 +6,10 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/logic/handlers"
-	"github.com/zhangpanyi/luckymoney/app/logic/pusher"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers"
+	"github.com/zhangpanyi/luckybot/app/logic/pusher"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 充值请求

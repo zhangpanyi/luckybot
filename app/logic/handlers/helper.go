@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/fmath"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/fmath"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 语言翻译

@@ -6,10 +6,10 @@ import (
 
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/fmath"
-	"github.com/zhangpanyi/luckymoney/app/location"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/fmath"
+	"github.com/zhangpanyi/luckybot/app/location"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 显示红包信息

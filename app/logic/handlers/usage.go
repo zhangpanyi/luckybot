@@ -6,7 +6,7 @@ import (
 	"github.com/zhangpanyi/basebot/history"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckymoney/app/config"
+	"github.com/zhangpanyi/luckybot/app/config"
 )
 
 // 使用说明

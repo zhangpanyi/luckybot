@@ -12,11 +12,11 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckymoney/app/config"
-	"github.com/zhangpanyi/luckymoney/app/fmath"
-	"github.com/zhangpanyi/luckymoney/app/logic/algo"
-	"github.com/zhangpanyi/luckymoney/app/monitor"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/fmath"
+	"github.com/zhangpanyi/luckybot/app/logic/algo"
+	"github.com/zhangpanyi/luckybot/app/monitor"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 匹配类型

@@ -2,7 +2,7 @@ package pusher
 
 import (
 	"github.com/zhangpanyi/basebot/telegram/methods"
-	"github.com/zhangpanyi/luckymoney/app/logic/botext"
+	"github.com/zhangpanyi/luckybot/app/logic/botext"
 )
 
 // 投递消息

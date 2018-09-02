@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 
 	"github.com/zhangpanyi/basebot/logger"
-	"github.com/zhangpanyi/luckymoney/app/logic/handlers"
-	"github.com/zhangpanyi/luckymoney/app/logic/pusher"
-	"github.com/zhangpanyi/luckymoney/app/logic/scriptengine"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers"
+	"github.com/zhangpanyi/luckybot/app/logic/pusher"
+	"github.com/zhangpanyi/luckybot/app/logic/scriptengine"
 )
 
 // 充值请求

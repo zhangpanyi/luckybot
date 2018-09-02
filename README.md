@@ -1,2 +1,1 @@
-# luckymoney
-Telegram通用红包机器人
+# 项目介绍

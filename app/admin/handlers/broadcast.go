@@ -5,8 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/zhangpanyi/luckymoney/app/logic/pusher"
-	"github.com/zhangpanyi/luckymoney/app/storage/models"
+	"github.com/zhangpanyi/luckybot/app/logic/pusher"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 广播消息请求
