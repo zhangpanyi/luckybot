@@ -4,6 +4,12 @@ host: 0.0.0.0
 # 端口号
 port: 18080
 
+# 管理用户名
+username: "user"
+
+# 管理密码
+password: "password"
+
 # 语言包路径
 languages: "lang"
 
