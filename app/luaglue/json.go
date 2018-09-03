@@ -2,7 +2,6 @@ package luaglue
 
 import (
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -92,11 +91,11 @@ func dumpObject(table *lua.LTable) map[string]interface{} {
 			case lua.LTNumber:
 				hash[string(k.(lua.LString))] = float64(v.(lua.LNumber))
 			case lua.LTTable:
-				table = v.(*lua.LTable)
-				if isPureArray(table) {
-					hash[string(k.(lua.LString))] = dumpArray(table)
+				newTable := v.(*lua.LTable)
+				if isPureArray(newTable) {
+					hash[string(k.(lua.LString))] = dumpArray(newTable)
 				} else {
-					hash[string(k.(lua.LString))] = dumpObject(table)
+					hash[string(k.(lua.LString))] = dumpObject(newTable)
 				}
 			}
 		}
@@ -131,7 +130,7 @@ func parseArray(state *lua.LState, arr []interface{}) *lua.LTable {
 	for i := 0; i < len(arr); i++ {
 		switch arr[i].(type) {
 		case nil:
-			table.Append(lua.LNil)
+			table.Append(lua.LString("null"))
 		case bool:
 			table.Append(lua.LBool(arr[i].(bool)))
 		case string:
@@ -139,9 +138,11 @@ func parseArray(state *lua.LState, arr []interface{}) *lua.LTable {
 		case float64:
 			table.Append(lua.LNumber(arr[i].(float64)))
 		case []interface{}:
-			fmt.Println("array")
+			newArr := arr[i].([]interface{})
+			table.Append(parseArray(state, newArr))
 		case map[string]interface{}:
-			fmt.Println("object")
+			dict := arr[i].(map[string]interface{})
+			table.Append(parseObject(state, dict))
 		}
 	}
 	return table
@@ -149,6 +150,24 @@ func parseArray(state *lua.LState, arr []interface{}) *lua.LTable {
 
 func parseObject(state *lua.LState, dict map[string]interface{}) *lua.LTable {
 	table := state.NewTable()
+	for k, v := range dict {
+		switch v.(type) {
+		case nil:
+			state.SetField(table, k, lua.LNil)
+		case bool:
+			state.SetField(table, k, lua.LBool(v.(bool)))
+		case string:
+			state.SetField(table, k, lua.LString(v.(string)))
+		case float64:
+			state.SetField(table, k, lua.LNumber(v.(float64)))
+		case []interface{}:
+			newArr := v.([]interface{})
+			state.SetField(table, k, parseArray(state, newArr))
+		case map[string]interface{}:
+			dict := v.(map[string]interface{})
+			state.SetField(table, k, parseObject(state, dict))
+		}
+	}
 	return table
 }
 
@@ -160,14 +179,12 @@ func parse(state *lua.LState) int {
 		var arr []interface{}
 		err = json.Unmarshal([]byte(jstring), &arr)
 		if err == nil {
-			fmt.Println(arr)
 			table = parseArray(state, arr)
 		}
 	} else {
 		var dict map[string]interface{}
 		err = json.Unmarshal([]byte(jstring), &dict)
 		if err == nil {
-			fmt.Println(dict)
 			table = parseObject(state, dict)
 		}
 	}

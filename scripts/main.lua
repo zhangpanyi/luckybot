@@ -41,5 +41,3 @@ end
 function valid_transaction(txid, from, to, symbol, amount, memo)
     return true
 end
-
-json:parse('[true,"2",3,[],null,{}]')
