@@ -345,7 +345,7 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 		bot.EditMessageReplyMarkup(query.Message, reply, false, markup)
 		return
 	}
-	logger.Errorf("Withdraw success, user: %d, asset: %s, amount: %s, fee: %s",
+	logger.Errorf("Withdraw submitted, user: %d, asset: %s, amount: %s, fee: %s",
 		fromID, serverCfg.Symbol, amount.String(), fee.String())
 
 	// 提交成功

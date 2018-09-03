@@ -127,7 +127,7 @@ func (glue *LuaGlue) OnWithdraw(to, symbol, amount string, future *future.Future
 	}
 	glue.state.CallByParam(lua.P{
 		Fn:      fn,
-		NRet:    0,
+		NRet:    2,
 		Protect: true,
 	}, lua.LString(to), lua.LString(symbol), lua.LString(amount))
 
