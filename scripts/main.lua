@@ -25,7 +25,7 @@ end
 -- @param to <string> 目标地址
 -- @param symbol <string> 货币符号
 -- @param amount <string> 提现金额
--- @param future <Future> 必须调用set_result(txid, error)方法
+-- @param future <Future> 处理完成必须调用set_result(txid, error)方法
 function on_withdraw(to, symbol, amount, future)
     future:set_result(nil, 'unrealized')
 end
@@ -42,10 +42,4 @@ function valid_transaction(txid, from, to, symbol, amount, memo)
     return true
 end
 
-
-local t = {"Lua", "Tutorial"}
-t['a'] = 1324
-t['b'] = 'sadaasd'
-t['c'] = true
-t['d'] = nil
-print(json:dump(t))
+json:parse('[true,"2",3,[],null,{}]')
