@@ -86,7 +86,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	// 获取用户ID
 	userID, err := strconv.ParseInt(request.Memo, 10, 64)
 	if err != nil {
-		logger.Infof("Failed to deposit, not found user id from memo, memo: %s, %v", request.Memo, err)
+		logger.Warnf("Failed to deposit, not found user id from memo, memo: %s, %v", request.Memo, err)
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(makeErrorRespone("not found user"))
 		return
@@ -94,7 +94,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 
 	// 防止重复充值
 	if err = depositModel.Add(request.TxID, jsb); err != nil {
-		logger.Infof("Failed to deposit, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s, %v",
+		logger.Warnf("Failed to deposit, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s, %v",
 			request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(makeErrorRespone("repeat deposit"))
@@ -105,7 +105,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	model := models.AccountModel{}
 	account, err := model.Deposit(userID, request.Asset, amount)
 	if err != nil {
-		logger.Infof("Failed to deposit, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s, %v",
+		logger.Warnf("Failed to deposit, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s, %v",
 			request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(makeErrorRespone(fmt.Sprintf("deposit failure, %v", err)))
@@ -127,6 +127,8 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		pusher.Post(userID, handlers.MakeHistoryMessage(userID, version), true, nil)
 	}
+	logger.Warnf("Deposit success, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s",
+		request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo)
 
 	w.WriteHeader(http.StatusOK)
 }
