@@ -25,8 +25,9 @@ end
 -- @param to <string> 目标地址
 -- @param symbol <string> 货币符号
 -- @param amount <string> 提现金额
--- @param future <Future> 处理完成必须调用set_result(txid, error)方法
-function on_withdraw(to, symbol, amount, future)
+-- @return txid <string> 交易ID
+-- @return error <string or nil> 错误信息
+function on_withdraw(to, symbol, amount)
     future:set_result(nil, 'unrealized')
 end
 
