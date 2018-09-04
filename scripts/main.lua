@@ -1,5 +1,5 @@
-local http = require("http");
-local json = require("json");
+local http = require("http")
+local json = require("json")
 
 -- 时钟事件
 -- @param delaytime <number>
