@@ -21,5 +21,5 @@ func init() {
 // 格式化时间
 func Format(timestamp int64) string {
 	utctime := time.Unix(timestamp, 0)
-	return utctime.Format(RFC3339LITE)
+	return utctime.In(loc).Format(RFC3339LITE)
 }

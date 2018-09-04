@@ -115,17 +115,18 @@ func (model *AccountVersionModel) GetVersions(userID int64, offset, limit uint, 
 			return true
 		}
 
-		cursor := bucket.Cursor()
 		if reverse {
-			for k, v := cursor.Last(); k != nil; k, v = cursor.Prev() {
-				if !filter(idx, k, v) {
+			for i := bucket.Sequence(); i >= uint64(1); i-- {
+				k := []byte(strconv.FormatUint(i, 10))
+				if !filter(idx, k, bucket.Get(k)) {
 					break
 				}
 				idx++
 			}
 		} else {
-			for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
-				if !filter(idx, k, v) {
+			for i := uint64(1); i <= bucket.Sequence(); i++ {
+				k := []byte(strconv.FormatUint(i, 10))
+				if !filter(idx, k, bucket.Get(k)) {
 					break
 				}
 				idx++
