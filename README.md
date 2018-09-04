@@ -49,6 +49,18 @@ luckybot.exe
 
 # 充值接口
 
+luckybot 提供了一个接收充值通知信息的 HTTP 接口，地址：`http://<host>:<port>/deposit`。
+| 字段 | 类型 | 说明 |
+| ------ | ------ | ------ |
+| txid | string | 交易ID |
+| heigth | uint64 | 区块高度 |
+| from | string | 来源地址 |
+| to | string | 目标地址 |
+| asset | string | 资产符号 |
+| amount | string | 金额 |
+| memo | string | 备注信息 |
+
+
 # 脚本系统
 
 脚本系统提供了 `http` 和 `json` 模块用于和外部通信，另外还定义了一系列事件通知函数用于自定义逻辑处理。
