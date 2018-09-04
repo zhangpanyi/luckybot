@@ -47,7 +47,7 @@ func main() {
 	scriptengine.NewScriptEngineOnce()
 
 	// 创建机器人轮询器
-	poller := poll.NewPoller(serveCfg.APIWebsite)
+	poller := poll.NewPoller(serveCfg.APIAccess)
 	bot, err := poller.StartPoll(serveCfg.Token, logic.NewUpdate)
 	if err != nil {
 		logger.Panic(err)

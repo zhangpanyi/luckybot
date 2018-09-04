@@ -16,8 +16,8 @@ languages: "lang"
 # BoltDB路径
 boltdb_path: "master.db"
 
-# API服务站点
-api_website: "http://api.smartbot.site/"
+# API接入点
+api_access: "http://api.smartbot.site/"
 
 # 机器人token
 token: "TELEGRAM_BOT_TOKEN"

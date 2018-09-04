@@ -8,23 +8,23 @@ import (
 
 // 轮询器
 type Poller struct {
-	apiwebsite string
+	apiaccess string
 }
 
 // 创建轮询器
-func NewPoller(apiwebsite string) *Poller {
+func NewPoller(apiaccess string) *Poller {
 	poller := new(Poller)
-	poller.apiwebsite = apiwebsite
+	poller.apiaccess = apiaccess
 	return poller
 }
 
 // 开始轮询
 func (poller *Poller) StartPoll(token string, handler updater.Handler) (*methods.BotExt, error) {
-	bot, err := methods.GetMe(poller.apiwebsite, token)
+	bot, err := methods.GetMe(poller.apiaccess, token)
 	if err != nil {
 		return nil, err
 	}
-	err = methods.DelWebhook(poller.apiwebsite, token)
+	err = methods.DelWebhook(poller.apiaccess, token)
 	if err != nil {
 		return nil, err
 	}
