@@ -2,6 +2,7 @@ package future
 
 // Future
 type Future struct {
+	id string
 	ch chan result
 }
 
@@ -12,8 +13,14 @@ type result struct {
 }
 
 // 创建Future
-func NewFuture() *Future {
-	return &Future{ch: make(chan result)}
+func newFuture(id string) *Future {
+	ch := make(chan result)
+	return &Future{ch: ch, id: id}
+}
+
+// 获取ID
+func (f *Future) ID() string {
+	return f.id
 }
 
 // 获取结果

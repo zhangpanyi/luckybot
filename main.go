@@ -11,6 +11,7 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/updater"
 	"github.com/zhangpanyi/luckybot/app/admin"
 	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/future"
 	"github.com/zhangpanyi/luckybot/app/logic"
 	"github.com/zhangpanyi/luckybot/app/logic/botext"
 	"github.com/zhangpanyi/luckybot/app/logic/context"
@@ -38,6 +39,9 @@ func main() {
 
 	// 状态上下文管理
 	context.CreateManagerOnce(16)
+
+	// 创建Future管理器
+	future.NewFutureManagerOnce()
 
 	// 创建Lua脚本引擎
 	scriptengine.NewScriptEngineOnce()

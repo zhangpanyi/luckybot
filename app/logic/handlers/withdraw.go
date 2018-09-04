@@ -370,9 +370,9 @@ func (handler *WithdrawHandler) handleWithdraw(bot *methods.BotExt, r *history.H
 	bot.EditMessageReplyMarkup(query.Message, reply, true, nil)
 
 	// 执行提现操作
-	f := future.NewFuture()
 	zero := big.NewFloat(0)
-	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount.String(), f)
+	f := future.Manager.NewFuture()
+	go scriptengine.Engine.OnWithdraw(info.account, serverCfg.Symbol, amount.String(), f.ID())
 	txid, err := f.GetResult()
 	if err != nil {
 		// 解锁资产

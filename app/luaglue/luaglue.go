@@ -1,12 +1,10 @@
 package luaglue
 
 import (
-	"errors"
 	"strconv"
 	"time"
 
 	"github.com/yuin/gopher-lua"
-	"github.com/zhangpanyi/luckybot/app/future"
 )
 
 // Lua胶水
@@ -120,30 +118,18 @@ func (glue *LuaGlue) DepositAddress(userID int64) (string, string) {
 }
 
 // 接收提现请求
-func (glue *LuaGlue) OnWithdraw(to, symbol, amount string, future *future.Future) {
+func (glue *LuaGlue) OnWithdraw(to, symbol, amount string, id string) {
 	fn := glue.state.GetGlobal("on_withdraw")
 	if fn == nil {
 		return
 	}
+
+	future := newFuture(glue.state, id)
 	glue.state.CallByParam(lua.P{
 		Fn:      fn,
-		NRet:    2,
+		NRet:    0,
 		Protect: true,
-	}, lua.LString(to), lua.LString(symbol), lua.LString(amount))
-
-	errRet := glue.state.Get(-1)
-	if errRet != nil && errRet.Type() == lua.LTString {
-		err := string(errRet.(lua.LString))
-		future.SetResult("", errors.New(err))
-		return
-	}
-
-	var txid string
-	txidRet := glue.state.Get(-2)
-	if txidRet != nil && txidRet.Type() == lua.LTString {
-		txid = string(txidRet.(lua.LString))
-	}
-	future.SetResult(txid, nil)
+	}, lua.LString(to), lua.LString(symbol), lua.LString(amount), future)
 }
 
 // 交易是否有效
