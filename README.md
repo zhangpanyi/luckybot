@@ -50,6 +50,7 @@ luckybot.exe
 # 充值接口
 
 luckybot 提供了一个接收充值通知信息的 HTTP 接口，地址：`http://<host>:<port>/deposit`。
+
 | 字段 | 类型 | 说明 |
 | ------ | ------ | ------ |
 | txid | string | 交易ID |
