@@ -62,7 +62,7 @@
     "lng_history_deposit": "您充值 *%s %s* 已确认, 区块高度: *%d*, *TxID*: *%s*",
     "lng_history_withdraw": "您申请提现 *%s %s* 到%s地址 *%s* 正在转账中, 手续费 *%s %s*",
     "lng_history_withdraw_failure": "您申请提现 *%s %s* 到%s地址 *%s* 转账失败。资金已退还，请查收",
-    "lng_history_withdraw_success": "您申请提现 *%s %s* 到%s地址 *%s* 已经转账, *TxID*：*%s*，请耐心等待",
+    "lng_history_withdraw_success": "您申请提现 *%s %s* 到%s地址 *%s* 已经转账, *TxID*：*%s*",
     "lng_withdraw_enter_amount": "📨 提现(*1*/3)\n\n您正在申请提现，请在下一条消息中回复需要提现的数量。\n您目前的账户余额：*%s %s*\n\n`注意：网络手续费收取 %s %s`",
     "lng_withdraw_enter_amount_answer": "请您在下一条消息中回复需要提现 %s 的数量。",
     "lng_withdraw_amount_not_enough": "很抱歉😅，您输入的提现数量有误，请重新输入。您目前的账户余额：*%s %s*\n\n`注意：网络手续费收取 %s %s`",
