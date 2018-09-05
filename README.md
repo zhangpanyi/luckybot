@@ -167,6 +167,7 @@ function parse(json : string) -> table, string
 - POST
 
 **参数**
+
 |参数名|必选|类型|说明|
 |:----    |:---|:----- |-----   |
 |user_id |是  |integer |用户ID   |
@@ -195,10 +196,97 @@ curl -H "Content-Type:application/json" -X POST --data '{"user_id": 1024}' http:
 
 此接口用于向红包机器人的所有使用者广播一条消息。
 
+**接口路径**
+
+`http://<host>:<port>/admin/broadcast`
+
+**请求参数**
+
+- POST
+
+**参数**
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|message |是  |string |消息文本   |
+
+**请求示例**
+```
+curl -H "Content-Type:application/json" -X POST --data '{"message": "hello world"}' http://<host>:<port>/admin/broadcast
+```
+
+**返回示例**
+```json
+{
+    "ok": true
+}
+```
+
+**返回参数说明**
+
+|参数名|类型|说明|
+|:----|:-----|-----  |
+|ok | boolean  |是否成功  |
+
 ## 4. 充值货币
 
 此接口用于向红包机器人的某个用户充值资金。
 
+**接口路径**
+
+`http://<host>:<port>/admin/deposit`
+
+**请求参数**
+
+- POST
+
+**参数**
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|user_id |是  |integer |用户ID   |
+|amount | 是 | string | 充值金额 |
+
+**请求示例**
+```
+curl -H "Content-Type:application/json" -X POST --data '{"user_id": 1024, "amount": "100"}' http://<host>:<port>/admin/deposit
+```
+
+**返回示例**
+```json
+{
+    "amount": "100",
+    "locked": "0"
+}
+```
+
+**返回参数说明**
+
+|参数名|类型|说明|
+|:----|:-----|-----  |
+|amount | string  |可用余额  |
+|locked | string  |锁定金额  |
+
 ## 5. 订阅者列表
 
 此接口用于获取红包机器人的所有订阅用户。
+
+**接口路径**
+
+`http://<host>:<port>/admin/subscribers`
+
+**请求示例**
+```
+curl -X GET http://<host>:<port>/admin/subscribers
+```
+
+**返回示例**
+```json
+[1024]
+```
+
+**返回参数说明**
+
+|类型|说明|
+|:-----|-----  |
+| integer of array  |订户列表  |
