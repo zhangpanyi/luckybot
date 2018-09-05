@@ -47,9 +47,11 @@ luckybot.exe
 
 # 配置文件
 
+luckybot 服务的配置文件模板位于：[server.yml.example](server.yml.example)，详情参见注释。语言包配置文件位于 [lang/zh_cn.lang](lang/zh_cn.lang)，目前只支持简体中文。
+
 # 充值接口
 
-luckybot 提供了一个接收充值通知信息的 HTTP 接口，地址：`http://<host>:<port>/deposit`。
+luckybot 提供了一个接收充值通知信息的 HTTP 接口，地址：`http://<host>:<port>/deposit`。当用户发生红包账户充值事件时，可以发起一个 HTTP POST 请求来告知红包机器人进行处理。此请求的 Body 必须时一个 JSON 字符串，并且遵守以下规则：
 
 | 字段 | 类型 | 说明 |
 | ------ | ------ | ------ |
@@ -60,6 +62,18 @@ luckybot 提供了一个接收充值通知信息的 HTTP 接口，地址：`http
 | asset | string | 资产符号 |
 | amount | string | 金额 |
 | memo | string | 备注信息 |
+
+```json
+{
+    "txid": "96d2453af92d1943140c16e94db22e8e99fef716",
+    "heigth": "82001",
+    "from": "from",
+    "to": "to",
+    "asset": "BTS",
+    "amount": "1.0",
+    "memo": "hello"
+}
+```
 
 
 # 脚本系统
@@ -131,3 +145,60 @@ function parse(json : string) -> table, string
 此函数用于将JSON 字符串解析为 `table`。返回值一为解析成功的 `table`，返回值二为错误信息。
 
 # 管理接口
+
+## 1. 备份数据
+
+此接口用于备份红包机器人的所有数据，返回一个二进制文件。
+
+**接口路径**
+
+`http://<host>:<port>/admin/backup`
+
+## 2. 获取余额
+
+此接口用于获取用户的红包余额信息。
+
+**接口路径**
+
+`http://<host>:<port>/admin/balance`
+
+**请求参数**
+
+- POST
+
+**参数**
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|user_id |是  |integer |用户ID   |
+
+**请求示例**
+```
+curl -H "Content-Type:application/json" -X POST --data '{"user_id": 1024}' http://<host>:<port>/admin/balance
+```
+
+**返回示例**
+```json
+{
+    "amount": "0",
+    "locked": "0"
+}
+```
+
+**返回参数说明**
+
+|参数名|类型|说明|
+|:----|:-----|-----  |
+|amount | string  |可用余额  |
+|locked | string  |锁定金额  |
+
+## 3. 广播消息
+
+此接口用于向红包机器人的所有使用者广播一条消息。
+
+## 4. 充值货币
+
+此接口用于向红包机器人的某个用户充值资金。
+
+## 5. 订阅者列表
+
+此接口用于获取红包机器人的所有订阅用户。
