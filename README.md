@@ -291,7 +291,7 @@ curl -X GET http://<host>:<port>/admin/subscribers
 |:-----|-----  |
 | integer of array  |订户列表  |
 
-## 7. 获取用户动作
+## 6. 获取用户动作
 
 此接口用于获取指定用户的历史操作记录。
 
