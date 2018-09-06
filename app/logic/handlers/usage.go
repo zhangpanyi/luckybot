@@ -6,6 +6,7 @@ import (
 	"github.com/zhangpanyi/basebot/history"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
+	"github.com/zhangpanyi/luckybot/app"
 	"github.com/zhangpanyi/luckybot/app/config"
 )
 
@@ -26,7 +27,10 @@ func (*UsageHandler) Handle(bot *methods.BotExt, r *history.History, update *typ
 
 	serveCfg := config.GetServe()
 	reply := tr(fromID, "lng_usage_say")
-	reply = fmt.Sprintf(reply, serveCfg.Name)
+	version := fmt.Sprintf("Version: %s", app.VERSION)
+	github := fmt.Sprintf("Fork from Github: [%s](%s)", app.GITHUB, app.GITHUB)
+	reply = fmt.Sprintf("%s\n\n%s\n%s", fmt.Sprintf(reply, serveCfg.Name), version, github)
+
 	bot.AnswerCallbackQuery(update.CallbackQuery, "", false, "", 0)
 	bot.EditMessageReplyMarkupDisableWebPagePreview(update.CallbackQuery.Message, reply, true, markup)
 }

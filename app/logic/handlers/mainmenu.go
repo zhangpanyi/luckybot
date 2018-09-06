@@ -54,10 +54,10 @@ func (handler *MainMenuHandler) Handle(bot *methods.BotExt, r *history.History, 
 		}
 
 		// 发送菜单列表
+		r.Clear()
 		reply, menus := handler.replyMessage(update.Message.From.ID)
 		markup := methods.MakeInlineKeyboardMarkup(menus, 2, 2, 2, 1)
 		bot.SendMessage(update.Message.Chat.ID, reply, true, markup)
-		r.Clear()
 		return
 	}
 
@@ -67,6 +67,7 @@ func (handler *MainMenuHandler) Handle(bot *methods.BotExt, r *history.History, 
 
 	// 回复主菜单
 	if update.CallbackQuery.Data == "/main/" {
+		r.Clear()
 		bot.AnswerCallbackQuery(update.CallbackQuery, "", false, "", 0)
 		reply, menus := handler.replyMessage(update.CallbackQuery.From.ID)
 		markup := methods.MakeInlineKeyboardMarkup(menus, 2, 2, 2, 1)
