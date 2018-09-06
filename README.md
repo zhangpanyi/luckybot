@@ -290,3 +290,81 @@ curl -X GET http://<host>:<port>/admin/subscribers
 |类型|说明|
 |:-----|-----  |
 | integer of array  |订户列表  |
+
+## 7. 获取用户动作
+
+此接口用于获取指定用户的历史操作记录。
+
+**接口路径**
+
+`http://<host>:<port>/admin/getactions`
+
+**请求参数**
+
+- POST
+
+**参数**
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+|user_id |是  |integer |用户ID   |
+|offset | 是 | integer | 偏移量 |
+|limit | 是 | integer | 返回数量 |
+
+**请求示例**
+```
+curl -H "Content-Type:application/json" -X POST --data '{"user_id": 1024, "offset": 0, "limit": 1}' http://<host>:<port>/admin/getactions
+```
+
+**返回示例**
+```json
+{
+    "sum": 28,
+    "count": 5,
+    "actions": [
+        {
+            "id": 28,
+            "symbol": "SYS",
+            "balance": "100",
+            "amount": "100",
+            "Timestamp": 1536230347,
+            "reason": 5,
+            "ref_block_height": 0,
+            "ref_tx_id": "test gift"
+        }
+    ]
+}
+```
+
+**返回参数说明**
+
+|参数名|必选|类型|说明|
+|:----    |:---|:----- |-----   |
+| id        | 是  | integer | 动作ID |
+| symbol    | 是  | string  | 代币符号 | 
+| balance   | 否  | string  | 余额变化 |
+| locked    | 否  | string  | 锁定变化 |
+| fee       | 否  | string  | 手续费 |
+| amount    | 是  | string  | 剩余金额 |
+| timestamp | 是  | integer | 时间戳 |
+| reason    | 是  | integer | 触发原因 |
+| ref_lucky_money_id    | 否  | integer | 关联红包ID |
+| ref_block_height      | 否  | integer | 关联区块高度 |
+| ref_tx_id             | 否  | integer | 关联交易ID |
+| ref_user_id           | 否  | integer | 关联用户ID |
+| ref_user_name         | 否  | string | 关联用户名 |
+| ref_address           | 否  | string | 关联地址 |
+| ref_memo              | 否  | string | 关联备注信息 |
+
+**触发原因枚举**
+
+|枚举值|描述|
+|:---|:---|
+| 1 | 发红包    |
+| 2 | 系统发放  |
+| 3 | 领取红包  |
+| 4 | 退还红包  |
+| 5 | 充值      |
+| 6 | 提现      |
+| 7 | 提现成功  |
+| 8 | 提现失败  |

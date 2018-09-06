@@ -19,6 +19,9 @@ boltdb_path: "master.db"
 # API接入点
 api_access: "http://api.smartbot.site/"
 
+# 电报客服ID
+# support_staff: 777000
+
 # 机器人token
 token: "TELEGRAM_BOT_TOKEN"
 

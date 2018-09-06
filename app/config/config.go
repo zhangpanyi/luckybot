@@ -19,6 +19,7 @@ type Serve struct {
 	UserName          string  `yaml:"username"`             // 用户名
 	Password          string  `yaml:"password"`             // 密码
 	APIAccess         string  `yaml:"api_access"`           // API接入点
+	SupportStaff      *int64  `yaml:"support_staff"`        // 电报客服ID
 	Token             string  `yaml:"token"`                // 机器人token
 	Name              string  `yaml:"name"`                 // 资产名称
 	Symbol            string  `yaml:"symbol"`               // 资产符号

@@ -25,11 +25,16 @@ func (*UsageHandler) Handle(bot *methods.BotExt, r *history.History, update *typ
 	}
 	markup := methods.MakeInlineKeyboardMarkupAuto(menus[:], 1)
 
+	var supportStaff int64
 	serveCfg := config.GetServe()
+	if serveCfg.SupportStaff != nil {
+		supportStaff = *serveCfg.SupportStaff
+	}
+
 	reply := tr(fromID, "lng_usage_say")
 	version := fmt.Sprintf("Version: %s", app.VERSION)
 	github := fmt.Sprintf("Fork from Github: [%s](%s)", app.GITHUB, app.GITHUB)
-	reply = fmt.Sprintf("%s\n\n%s\n%s", fmt.Sprintf(reply, serveCfg.Name), version, github)
+	reply = fmt.Sprintf("%s\n\n%s\n%s", fmt.Sprintf(reply, serveCfg.Name, supportStaff), version, github)
 
 	bot.AnswerCallbackQuery(update.CallbackQuery, "", false, "", 0)
 	bot.EditMessageReplyMarkupDisableWebPagePreview(update.CallbackQuery.Message, reply, true, markup)

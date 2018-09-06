@@ -29,11 +29,11 @@ const (
 type Version struct {
 	ID              uint64     `json:"id"`                           // 版本ID
 	Symbol          string     `json:"symbol"`                       // 代币符号
-	Balance         *big.Float `json:"balance"`                      // 余额变化
-	Locked          *big.Float `json:"locked"`                       // 锁定变化
-	Fee             *big.Float `json:"fee"`                          // 手续费
+	Balance         *big.Float `json:"balance,omitempty"`            // 余额变化
+	Locked          *big.Float `json:"locked,omitempty"`             // 锁定变化
+	Fee             *big.Float `json:"fee,omitempty"`                // 手续费
 	Amount          *big.Float `json:"amount"`                       // 剩余金额
-	Timestamp       int64      `json:"Timestamp"`                    // 时间戳
+	Timestamp       int64      `json:"timestamp"`                    // 时间戳
 	Reason          Reason     `json:"reason"`                       // 触发原因
 	RefLuckyMoneyID *uint64    `json:"ref_lucky_money_id,omitempty"` // 关联红包ID
 	RefBlockHeight  *uint64    `json:"ref_block_height,omitempty"`   // 关联区块高度

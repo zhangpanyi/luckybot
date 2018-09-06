@@ -16,6 +16,7 @@ func InitRoute(router *mux.Router) {
 		router.HandleFunc("/admin/deposit", handlers.Deposit)
 		router.HandleFunc("/admin/balance", handlers.GetBalance)
 		router.HandleFunc("/admin/broadcast", handlers.Broadcast)
+		router.HandleFunc("/admin/getactions", handlers.GetActions)
 		router.HandleFunc("/admin/subscribers", handlers.Subscribers)
 	})
 }
