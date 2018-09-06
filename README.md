@@ -368,3 +368,7 @@ curl -H "Content-Type:application/json" -X POST --data '{"user_id": 1024, "offse
 | 6 | 提现      |
 | 7 | 提现成功  |
 | 8 | 提现失败  |
+
+# 衍生项目
+
+比特股红包：[https://github.com/zhangpanyi/luckybtsbot](https://github.com/zhangpanyi/luckybtsbot)
