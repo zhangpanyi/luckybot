@@ -1,12 +1,9 @@
 package logic
 
 import (
-	"math/big"
-
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckybot/app/config"
 	"github.com/zhangpanyi/luckybot/app/logic/context"
 	"github.com/zhangpanyi/luckybot/app/logic/handlers"
 	"github.com/zhangpanyi/luckybot/app/storage/models"
@@ -51,26 +48,26 @@ func NewUpdate(bot *methods.BotExt, update *types.Update) {
 	}
 
 	// 赠送测试代币
-	serverCfg := config.GetServe()
-	accountModel := models.AccountModel{}
-	balance, err := accountModel.GetAccount(fromID, serverCfg.Symbol)
-	if err != nil || balance.Amount.Cmp(big.NewFloat(0)) <= 0 {
-		amount := big.NewFloat(100)
-		account, err := accountModel.Deposit(fromID, serverCfg.Symbol, amount)
-		if err == nil {
-			var height uint64
-			txid := "test gift"
-			versionModel := models.AccountVersionModel{}
-			versionModel.InsertVersion(fromID, &models.Version{
-				Symbol:         serverCfg.Symbol,
-				Balance:        amount,
-				Amount:         account.Amount,
-				Reason:         models.ReasonDeposit,
-				RefBlockHeight: &height,
-				RefTxID:        &txid,
-			})
-		}
-	}
+	// serverCfg := config.GetServe()
+	// accountModel := models.AccountModel{}
+	// balance, err := accountModel.GetAccount(fromID, serverCfg.Symbol)
+	// if err != nil || balance.Amount.Cmp(big.NewFloat(0)) <= 0 {
+	// 	amount := big.NewFloat(100)
+	// 	account, err := accountModel.Deposit(fromID, serverCfg.Symbol, amount)
+	// 	if err == nil {
+	// 		var height uint64
+	// 		txid := "test gift"
+	// 		versionModel := models.AccountVersionModel{}
+	// 		versionModel.InsertVersion(fromID, &models.Version{
+	// 			Symbol:         serverCfg.Symbol,
+	// 			Balance:        amount,
+	// 			Amount:         account.Amount,
+	// 			Reason:         models.ReasonDeposit,
+	// 			RefBlockHeight: &height,
+	// 			RefTxID:        &txid,
+	// 		})
+	// 	}
+	// }
 
 	// 处理机器人请求
 	new(handlers.MainMenuHandler).Handle(bot, r, update)
