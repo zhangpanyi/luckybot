@@ -239,7 +239,7 @@ func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount *bi
 			return err
 		}
 
-		if amount.Cmp(account.Amount) == 1 {
+		if amount.Cmp(account.Locked) == 1 {
 			return ErrInsufficientAmount
 		}
 		account.Locked.Sub(account.Locked, amount)

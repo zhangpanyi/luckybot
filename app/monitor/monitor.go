@@ -138,6 +138,8 @@ func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 		logger.Warnf("Failed to set expired of lucky money, not found lucky money, %d, %v", id, err)
 		return
 	}
+
+	// 是否领完了
 	if received == luckyMoney.Number {
 		return
 	}
@@ -156,7 +158,7 @@ func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 		logger.Errorf("Failed to return lucky money asset of expired, %v", err)
 		return
 	}
-	logger.Errorf("Return lucky money asset of expired, user=%d, asset=%s, amount=%d",
+	logger.Errorf("Return lucky money asset of expired, user=%d, asset=%s, amount=%s",
 		luckyMoney.SenderID, luckyMoney.Asset, balance)
 
 	// 插入账户记录
