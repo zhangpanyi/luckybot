@@ -8,7 +8,7 @@ import (
 
 	"github.com/zhangpanyi/luckybot/app/config"
 	"github.com/zhangpanyi/luckybot/app/fmath"
-	"github.com/zhangpanyi/luckybot/app/logic/handlers"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
 	"github.com/zhangpanyi/luckybot/app/logic/pusher"
 	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
@@ -88,7 +88,7 @@ func Deposit(w http.ResponseWriter, r *http.Request) {
 
 	// 推送充值通知
 	if err == nil {
-		pusher.Post(request.UserID, handlers.MakeHistoryMessage(request.UserID, version), true, nil)
+		pusher.Post(request.UserID, utils.MakeHistoryMessage(request.UserID, version), true, nil)
 	}
 
 	// 返回余额信息

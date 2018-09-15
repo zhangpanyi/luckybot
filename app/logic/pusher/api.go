@@ -11,5 +11,4 @@ func Post(receiver int64, text string, markdownMode bool,
 	if gpusher != nil && botext.GetBot() != nil {
 		gpusher.push(botext.GetBot(), receiver, text, markdownMode, markup)
 	}
-
 }

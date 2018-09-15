@@ -8,12 +8,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/zhangpanyi/luckybot/app/storage/models"
-
 	"github.com/zhangpanyi/basebot/logger"
-	"github.com/zhangpanyi/luckybot/app/logic/handlers"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
 	"github.com/zhangpanyi/luckybot/app/logic/pusher"
 	"github.com/zhangpanyi/luckybot/app/logic/scriptengine"
+	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 充值请求
@@ -125,7 +124,7 @@ func HandleDeposit(w http.ResponseWriter, r *http.Request) {
 
 	// 推送充值通知
 	if err == nil {
-		pusher.Post(userID, handlers.MakeHistoryMessage(userID, version), true, nil)
+		pusher.Post(userID, utils.MakeHistoryMessage(userID, version), true, nil)
 	}
 	logger.Warnf("Deposit success, txid: %s, from: %s, to: %s, asset: %s, amount: %s, memo: %s",
 		request.TxID, request.From, request.To, request.Asset, request.Amount, request.Memo)

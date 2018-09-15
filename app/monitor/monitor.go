@@ -11,6 +11,8 @@ import (
 	"github.com/zhangpanyi/basebot/telegram/updater"
 	"github.com/zhangpanyi/luckybot/app/config"
 	"github.com/zhangpanyi/luckybot/app/fmath"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
+	"github.com/zhangpanyi/luckybot/app/logic/pusher"
 	"github.com/zhangpanyi/luckybot/app/storage"
 	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
@@ -163,12 +165,17 @@ func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 
 	// 插入账户记录
 	zero := big.NewFloat(0)
-	version := models.AccountVersionModel{}
-	version.InsertVersion(luckyMoney.SenderID, &models.Version{
+	versionModel := models.AccountVersionModel{}
+	version, err := versionModel.InsertVersion(luckyMoney.SenderID, &models.Version{
 		Symbol:          luckyMoney.Asset,
 		Locked:          zero.Sub(zero, balance),
 		Amount:          account.Amount,
 		Reason:          models.ReasonGiveBack,
 		RefLuckyMoneyID: &luckyMoney.ID,
 	})
+
+	// 推送退还通知
+	if err == nil {
+		pusher.Post(luckyMoney.SenderID, utils.MakeHistoryMessage(luckyMoney.SenderID, version), true, nil)
+	}
 }

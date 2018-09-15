@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/zhangpanyi/luckybot/app/config"
 	"github.com/zhangpanyi/luckybot/app/fmath"
+	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
 	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
 // 语言翻译
 func tr(userID int64, key string) string {
-	return config.GetLanguge().Value("zh_CN", key)
+	return utils.Tr(userID, key)
 }
 
 // 生成红包基本信息
