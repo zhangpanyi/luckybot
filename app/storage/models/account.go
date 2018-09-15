@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/boltdb/bolt"
+	"github.com/zhangpanyi/luckybot/app/fmath"
 	"github.com/zhangpanyi/luckybot/app/storage"
 )
 
@@ -15,6 +16,16 @@ type Account struct {
 	Symbol string     `json:"symbol"` // 货币符号
 	Amount *big.Float `json:"amount"` // 资产金额
 	Locked *big.Float `json:"locked"` // 锁定金额
+}
+
+// 标准化
+func (account *Account) Normalization() {
+	if account.Amount != nil {
+		account.Amount.SetPrec(fmath.Prec())
+	}
+	if account.Locked != nil {
+		account.Locked.SetPrec(fmath.Prec())
+	}
 }
 
 var (
@@ -55,6 +66,7 @@ func (model *AccountModel) GetAccounts(userID int64) ([]*Account, error) {
 			if err = json.Unmarshal(v, &account); err != nil {
 				return err
 			}
+			account.Normalization()
 			accounts = append(accounts, &account)
 			return nil
 		})
@@ -89,6 +101,7 @@ func (model *AccountModel) GetAccount(userID int64, symbol string) (*Account, er
 		if err = json.Unmarshal(jsb, &account); err != nil {
 			return err
 		}
+		account.Normalization()
 		return nil
 	})
 
@@ -117,6 +130,7 @@ func (model *AccountModel) Deposit(userID int64, symbol string, amount *big.Floa
 			if err = json.Unmarshal(jsb, &account); err != nil {
 				return err
 			}
+			account.Normalization()
 			account.Amount.Add(account.Amount, amount)
 		}
 
@@ -155,6 +169,7 @@ func (model *AccountModel) Withdraw(userID int64, symbol string, amount *big.Flo
 		if err = json.Unmarshal(jsb, &account); err != nil {
 			return err
 		}
+		account.Normalization()
 
 		if account.Locked.Cmp(amount) == 1 {
 			return ErrInsufficientAmount
@@ -196,6 +211,7 @@ func (model *AccountModel) LockAccount(userID int64, symbol string, amount *big.
 		if err = json.Unmarshal(jsb, &account); err != nil {
 			return err
 		}
+		account.Normalization()
 
 		if amount.Cmp(account.Amount) == 1 {
 			return ErrInsufficientAmount
@@ -238,6 +254,7 @@ func (model *AccountModel) UnlockAccount(userID int64, symbol string, amount *bi
 		if err = json.Unmarshal(jsb, &account); err != nil {
 			return err
 		}
+		account.Normalization()
 
 		if amount.Cmp(account.Locked) == 1 {
 			return ErrInsufficientAmount
@@ -290,6 +307,7 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 		if err = json.Unmarshal(jsb, &fromAccount); err != nil {
 			return err
 		}
+		fromAccount.Normalization()
 
 		if amount.Cmp(fromAccount.Locked) == 1 {
 			return ErrInsufficientAmount
@@ -315,6 +333,7 @@ func (model *AccountModel) TransferFromLockAccount(from, to int64, symbol string
 			if err = json.Unmarshal(jsb, &toAccount); err != nil {
 				return err
 			}
+			toAccount.Normalization()
 			toAccount.Amount.Add(toAccount.Amount, amount)
 		}
 

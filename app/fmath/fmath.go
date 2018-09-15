@@ -4,6 +4,17 @@ import (
 	"math/big"
 )
 
+var prec uint
+
+func init() {
+	prec = big.NewFloat(0).Prec()
+}
+
+// 精度
+func Prec() uint {
+	return prec
+}
+
 // 相加
 func Add(x *big.Float, y *big.Float) *big.Float {
 	return big.NewFloat(0).Add(x, y)

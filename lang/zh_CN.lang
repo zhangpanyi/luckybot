@@ -58,6 +58,7 @@
     "lng_history_no_op": "您当前还没有任何操作记录。",
     "lng_history_give": "您发放了红包(*%d*), 花费 *%s %s*",
     "lng_history_receive": "您领取了 [[@%s](tg://user?id=%d)] 发放的红包(*%d*), 获得 *%s %s*",
+    "lng_history_system": "系统为您充值了 *%s %s*，请注意查收",
     "lng_history_giveback": "您创建的红包(*%d*)已过期, 退还剩余金额 *%s %s*",
     "lng_history_deposit": "您充值 *%s %s* 已确认, 区块高度: *%d*, *TxID*: *%s*",
     "lng_history_withdraw": "您申请提现 *%s %s* 到%s地址 *%s* 正在转账中, 手续费 *%s %s*",

@@ -34,6 +34,19 @@ type LuckyMoney struct {
 	Timestamp  int64      `json:"timestamp"`   // 时间戳
 }
 
+// 标准化
+func (luckymoney *LuckyMoney) Normalization() {
+	if luckymoney.Value != nil {
+		luckymoney.Value.SetPrec(fmath.Prec())
+	}
+	if luckymoney.Amount != nil {
+		luckymoney.Amount.SetPrec(fmath.Prec())
+	}
+	if luckymoney.Received != nil {
+		luckymoney.Received.SetPrec(fmath.Prec())
+	}
+}
+
 // 红包用户
 type LuckyMoneyUser struct {
 	UserID    int64  `json:"user_id"`    // 用户ID
@@ -44,6 +57,13 @@ type LuckyMoneyUser struct {
 type LuckyMoneyHistory struct {
 	Value *big.Float      `json:"value"`          // 红包金额
 	User  *LuckyMoneyUser `json:"user,omitempty"` // 用户信息
+}
+
+// 标准化
+func (history *LuckyMoneyHistory) Normalization() {
+	if history.Value != nil {
+		history.Value.SetPrec(fmath.Prec())
+	}
 }
 
 var (
@@ -306,6 +326,7 @@ func (model *LuckyMoneyModel) GetLuckyMoney(id uint64) (*LuckyMoney, uint32, err
 		if err = json.Unmarshal(jsb, &base); err != nil {
 			return err
 		}
+		base.Normalization()
 
 		// 已领取数量
 		seq := bucket.Get([]byte("seq"))
@@ -390,6 +411,8 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 		if err = json.Unmarshal(jsb, &base); err != nil {
 			return err
 		}
+		base.Normalization()
+
 		if uint32(numReceived) >= base.Number {
 			return ErrNothingLeft
 		}
@@ -479,6 +502,8 @@ func (model *LuckyMoneyModel) GetHistory(id uint64) ([]*LuckyMoneyHistory, error
 				if err = json.Unmarshal(v, &item); err != nil {
 					return err
 				}
+				item.Normalization()
+
 				if item.User == nil {
 					return nil
 				}
@@ -530,6 +555,9 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *L
 		if err = json.Unmarshal(worstData, &worst); err != nil {
 			return err
 		}
+
+		best.Normalization()
+		worst.Normalization()
 		return nil
 	})
 
@@ -616,6 +644,8 @@ func (model *LuckyMoneyModel) ForeachLuckyMoney(startID uint64, callback func(*L
 				if err = json.Unmarshal(jsb, &base); err != nil {
 					continue
 				}
+				base.Normalization()
+
 				if callback != nil {
 					callback(&base)
 				}
@@ -701,6 +731,7 @@ func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int
 	if err = json.Unmarshal(jsb, &history); err != nil {
 		return nil, err
 	}
+	history.Normalization()
 	history.User = user
 
 	jsb, err = json.Marshal(&history)

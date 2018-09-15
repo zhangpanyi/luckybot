@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+	"github.com/zhangpanyi/luckybot/app/fmath"
 	"github.com/zhangpanyi/luckybot/app/storage"
 )
 
@@ -146,6 +147,18 @@ func (model *AccountVersionModel) GetVersions(userID int64, offset, limit uint, 
 		var version Version
 		if err = json.Unmarshal(jsb, &version); err != nil {
 			return nil, 0, err
+		}
+		if version.Balance != nil {
+			version.Balance.SetPrec(fmath.Prec())
+		}
+		if version.Locked != nil {
+			version.Locked.SetPrec(fmath.Prec())
+		}
+		if version.Fee != nil {
+			version.Fee.SetPrec(fmath.Prec())
+		}
+		if version.Amount != nil {
+			version.Amount.SetPrec(fmath.Prec())
 		}
 		versions = append(versions, &version)
 	}

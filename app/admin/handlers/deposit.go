@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/zhangpanyi/luckybot/app/config"
+	"github.com/zhangpanyi/luckybot/app/fmath"
 	"github.com/zhangpanyi/luckybot/app/logic/handlers"
 	"github.com/zhangpanyi/luckybot/app/logic/pusher"
 	"github.com/zhangpanyi/luckybot/app/storage/models"
@@ -15,7 +16,7 @@ import (
 // 充值请求
 type DepositRequest struct {
 	UserID int64      `json:"user_id"` // 用户ID
-	Amount *big.Float `json:"Amount"`  // 充值金额
+	Amount *big.Float `json:"amount"`  // 充值金额
 }
 
 // 充值响应
@@ -49,6 +50,9 @@ func Deposit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	zero := big.NewFloat(0)
+	if request.Amount != nil {
+		request.Amount.SetPrec(fmath.Prec())
+	}
 	if request.Amount == nil || request.Amount.Cmp(zero) <= 0 {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write(makeErrorRespone("amount must be greater than 0"))

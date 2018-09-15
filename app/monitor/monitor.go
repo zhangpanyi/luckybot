@@ -159,7 +159,7 @@ func (t *Monitor) asyncHandleLuckyMoneyExpire(id uint64) {
 		return
 	}
 	logger.Errorf("Return lucky money asset of expired, user=%d, asset=%s, amount=%s",
-		luckyMoney.SenderID, luckyMoney.Asset, balance)
+		luckyMoney.SenderID, luckyMoney.Asset, balance.String())
 
 	// 插入账户记录
 	zero := big.NewFloat(0)

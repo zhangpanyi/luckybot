@@ -44,9 +44,8 @@ func MakeHistoryMessage(fromID int64, version *models.Version) string {
 			*version.RefUserID, *version.RefLuckyMoneyID, version.Balance.String(), version.Symbol)
 	case models.ReasonSystem:
 		// 系统发放
-		message := tr(fromID, "lng_history_receive")
-		return fmt.Sprintf(message, *version.RefUserName,
-			*version.RefUserID, *version.RefLuckyMoneyID, version.Balance.String(), version.Symbol)
+		message := tr(fromID, "lng_history_system")
+		return fmt.Sprintf(message, version.Balance.String(), version.Symbol)
 	case models.ReasonGiveBack:
 		// 退还红包
 		message := tr(fromID, "lng_history_giveback")

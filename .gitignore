@@ -20,4 +20,5 @@ server.yml
 *.lock
 *.yml
 *.yaml
+debug
 luckybot
