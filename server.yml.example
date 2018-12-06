@@ -4,12 +4,6 @@ host: 0.0.0.0
 # 端口号
 port: 18080
 
-# 管理用户名
-username: "user"
-
-# 管理密码
-password: "password"
-
 # 语言包路径
 languages: "lang"
 
@@ -20,7 +14,10 @@ boltdb_path: "master.db"
 api_access: "http://api.smartbot.site/"
 
 # 电报客服ID
-# support_staff: 777000
+support_staff: 777000
+
+# 验证码密钥
+secret_key: 7AG5ZKUDOOTVA25JP6DXYASHKERDQMQ5
 
 # 机器人token
 token: "TELEGRAM_BOT_TOKEN"

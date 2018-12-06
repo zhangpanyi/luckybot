@@ -18,6 +18,8 @@ import:
 - package: github.com/vrecan/death
   version: v3.0.1
 - package: github.com/yuin/gopher-lua
+- package: github.com/pquerna/otp
+  version: v1.0.0
 - package: github.com/zhangpanyi/basebot
   subpackages:
   - history

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/zhangpanyi/basebot/logger"
@@ -14,6 +13,7 @@ type GetActionsRequest struct {
 	UserID int64 `json:"user_id"` // 用户ID
 	Offset uint  `json:"offset"`  // 偏移量
 	Limit  uint  `json:"limit"`   // 返回数量
+	Tonce  int64 `json:"tonce"`   // 时间戳
 }
 
 // 获取动作响应
@@ -26,24 +26,18 @@ type GetActionsRespone struct {
 // 获取用户操作
 func GetActions(w http.ResponseWriter, r *http.Request) {
 	// 验证权限
-	if !authentication(r) {
+	sessionID, data, ok := authentication(r)
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(makeErrorRespone("", ""))
 		return
 	}
 
 	// 解析请求参数
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(makeErrorRespone(err.Error()))
-		return
-	}
-	defer r.Body.Close()
-
 	var request GetActionsRequest
-	if err = json.Unmarshal(data, &request); err != nil {
+	if err := json.Unmarshal(data, &request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 
@@ -53,19 +47,19 @@ func GetActions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Warnf("Failed to query user actions, %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 	respone := GetActionsRespone{Sum: sum, Count: len(actions), Actions: actions}
 	jsb, err := json.Marshal(respone)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 
 	// 返回余额信息
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(jsb)
+	w.Write(makeRespone(sessionID, jsb))
 }

@@ -16,10 +16,9 @@ import (
 type Serve struct {
 	Host              string  `yaml:"host"`                 // 主机地址
 	Port              int     `yaml:"port"`                 // HTTP端口
-	UserName          string  `yaml:"username"`             // 用户名
-	Password          string  `yaml:"password"`             // 密码
 	APIAccess         string  `yaml:"api_access"`           // API接入点
 	SupportStaff      *int64  `yaml:"support_staff"`        // 电报客服ID
+	SecretKey         string  `yaml:"secret_key"`           // 验证码密钥
 	Token             string  `yaml:"token"`                // 机器人token
 	Name              string  `yaml:"name"`                 // 资产名称
 	Symbol            string  `yaml:"symbol"`               // 资产符号

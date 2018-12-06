@@ -2,17 +2,32 @@ package handlers
 
 import (
 	"bytes"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
 	"github.com/zhangpanyi/luckybot/app/storage"
 )
 
+// 备份数据库请求
+type BackupRequest struct {
+	Tonce int64 `json:"tonce"` // 时间戳
+}
+
 // 备份数据库
 func Backup(w http.ResponseWriter, r *http.Request) {
 	// 验证权限
-	if !authentication(r) {
+	sessionID, data, ok := authentication(r)
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	// 解析请求参数
+	var request BackupRequest
+	if err := json.Unmarshal(data, &request); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 
@@ -21,7 +36,7 @@ func Backup(w http.ResponseWriter, r *http.Request) {
 	size, err := storage.Backup(buf)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 

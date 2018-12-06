@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"syscall"
@@ -21,9 +22,22 @@ import (
 	"github.com/zhangpanyi/luckybot/app/monitor"
 	poll "github.com/zhangpanyi/luckybot/app/poller"
 	"github.com/zhangpanyi/luckybot/app/storage"
+
+	"github.com/zhangpanyi/luckybot/app/admin/handlers"
 )
 
 func main() {
+	msg := handlers.Ciphertext{}
+	key := [16]byte{'1', '2', '3', '4'}
+	msg.Encode([]byte("1234hsad12321sdasds213213123ello"), key)
+	fmt.Printf("%+v\n", msg)
+
+	msg2 := handlers.Ciphertext{}
+	msg2.Data = msg.Data
+	msg2.Checksum = msg.Checksum
+	data, ok := msg2.Decode(key)
+	fmt.Println(string(data), ok)
+	return
 	// 加载配置文件
 	config.LoadConfig("server.yml")
 

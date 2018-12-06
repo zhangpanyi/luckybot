@@ -1,40 +1,51 @@
 package handlers
 
 import (
-	"encoding/base64"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
-	"strings"
-
-	"github.com/zhangpanyi/luckybot/app/config"
 )
 
 // 身份验证
-func authentication(r *http.Request) bool {
-	s := strings.SplitN(r.Header.Get("Authorization"), " ", 2)
-	if len(s) != 2 {
-		return false
-	}
-
-	bin, err := base64.StdEncoding.DecodeString(s[1])
+func authentication(r *http.Request) (string, []byte, bool) {
+	data, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
 	if err != nil {
-		return false
+		return "", nil, false
 	}
 
-	pair := strings.SplitN(string(bin), ":", 2)
-	if len(pair) != 2 {
-		return false
+	sessionID, src, ok := authenticator.Decode(data)
+	if !ok {
+		return "", nil, false
 	}
+	authenticator.KeepAlive(sessionID)
+	return sessionID, src, true
+}
 
-	serveCfg := config.GetServe()
-	return pair[0] == serveCfg.UserName && pair[1] == serveCfg.Password
+// 生成响应
+func makeRespone(sessionID string, result []byte) []byte {
+	respone := struct {
+		OK     bool            `json:"ok"`
+		Result json.RawMessage `json:"result"`
+	}{
+		OK:     true,
+		Result: result,
+	}
+	src, _ := json.Marshal(&respone)
+	data := authenticator.Encode(sessionID, src)
+	return data
 }
 
 // 生成错误响应
-func makeErrorRespone(reason string) []byte {
-	object := map[string]string{
-		"error": reason,
+func makeErrorRespone(sessionID, reason string) []byte {
+	respone := struct {
+		OK    bool   `json:"ok"`
+		Error string `json:"error"`
+	}{
+		OK:    true,
+		Error: reason,
 	}
-	jsb, _ := json.Marshal(&object)
-	return jsb
+	src, _ := json.Marshal(&respone)
+	data := authenticator.Encode(sessionID, src)
+	return data
 }

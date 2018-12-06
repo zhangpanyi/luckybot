@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"math/big"
 	"net/http"
 
@@ -14,6 +13,7 @@ import (
 // 获取余额请求
 type GetBalanceRequest struct {
 	UserID int64 `json:"user_id"` // 用户ID
+	Tonce  int64 `json:"tonce"`   // 时间戳
 }
 
 // 获取余额响应
@@ -25,24 +25,18 @@ type GetBalanceRespone struct {
 // 获取余额
 func GetBalance(w http.ResponseWriter, r *http.Request) {
 	// 验证权限
-	if !authentication(r) {
+	sessionID, data, ok := authentication(r)
+	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(makeErrorRespone("", ""))
 		return
 	}
 
 	// 解析请求参数
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write(makeErrorRespone(err.Error()))
-		return
-	}
-	defer r.Body.Close()
-
 	var request GetBalanceRequest
-	if err = json.Unmarshal(data, &request); err != nil {
+	if err := json.Unmarshal(data, &request); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 
@@ -52,7 +46,7 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	account, err := model.GetAccount(request.UserID, serveCfg.Symbol)
 	if err != nil && err != storage.ErrNoBucket {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 
@@ -60,12 +54,12 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 	jsb, err := json.Marshal(respone)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(makeErrorRespone(err.Error()))
+		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
 	}
 
 	// 返回余额信息
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(jsb)
+	w.Write(makeRespone(sessionID, jsb))
 }
