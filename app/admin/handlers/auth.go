@@ -29,7 +29,7 @@ type Session struct {
 
 // 密文消息
 type Ciphertext struct {
-	ACK      bool   `json:"ack,omitempty"`
+	ACK      bool   `json:"ack"`
 	Session  string `json:"session,omitempty"`
 	Data     string `json:"data"`
 	Checksum uint32 `json:"checksum"`
@@ -141,7 +141,8 @@ func (a *Authenticator) Encode(sessionID string, data []byte) []byte {
 	session, ok := a.sessions[sessionID]
 	if !ok {
 		a.mutex.Unlock()
-		msg := Ciphertext{ACK: false}
+		msg := Ciphertext{}
+		msg.ACK = false
 		jsb, _ := json.Marshal(&msg)
 		return jsb
 	}
@@ -155,7 +156,8 @@ func (a *Authenticator) Encode(sessionID string, data []byte) []byte {
 		key[i] = byte(session.Key[i])
 	}
 
-	msg := Ciphertext{ACK: true}
+	msg := Ciphertext{}
+	msg.ACK = true
 	msg.Encode(data, key)
 	jsb, _ := json.Marshal(&msg)
 	return jsb
