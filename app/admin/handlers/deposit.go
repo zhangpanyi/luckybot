@@ -27,6 +27,9 @@ type DepositRespone struct {
 
 // 充值资产
 func Deposit(w http.ResponseWriter, r *http.Request) {
+	// 跨域访问
+	allowAccessControl(w)
+
 	// 验证权限
 	sessionID, data, ok := authentication(r)
 	if !ok {

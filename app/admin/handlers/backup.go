@@ -16,10 +16,14 @@ type BackupRequest struct {
 
 // 备份数据库
 func Backup(w http.ResponseWriter, r *http.Request) {
+	// 跨域访问
+	allowAccessControl(w)
+
 	// 验证权限
 	sessionID, data, ok := authentication(r)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(makeErrorRespone("", ""))
 		return
 	}
 

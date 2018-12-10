@@ -6,30 +6,45 @@ import (
 	"crypto/cipher"
 )
 
-func padding(src []byte, blocksize int) []byte {
-	padnum := blocksize - len(src)%blocksize
-	pad := bytes.Repeat([]byte{byte(padnum)}, padnum)
-	return append(src, pad...)
+func PKCS5Padding(ciphertext []byte, blockSize int) []byte {
+	padding := blockSize - len(ciphertext)%blockSize
+	padtext := bytes.Repeat([]byte{byte(padding)}, padding)
+	return append(ciphertext, padtext...)
 }
 
-func unpadding(src []byte) []byte {
-	n := len(src)
-	unpadnum := int(src[n-1])
-	return src[:n-unpadnum]
+func PKCS5UnPadding(origData []byte) []byte {
+	length := len(origData)
+	unpadding := int(origData[length-1])
+	if unpadding > length {
+		return nil
+	}
+	return origData[:(length - unpadding)]
 }
 
-func DncryptAES(src []byte, key [16]byte) []byte {
-	block, _ := aes.NewCipher(key[:])
-	src = padding(src, block.BlockSize())
-	blockmode := cipher.NewCBCEncrypter(block, key[:])
-	blockmode.CryptBlocks(src, src)
-	return src
+func AesEncrypt(origData []byte, key [16]byte) ([]byte, error) {
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	blockSize := block.BlockSize()
+	origData = PKCS5Padding(origData, blockSize)
+	blockMode := cipher.NewCBCEncrypter(block, key[:blockSize])
+	crypted := make([]byte, len(origData))
+	blockMode.CryptBlocks(crypted, origData)
+	return crypted, nil
 }
 
-func DecryptAES(src []byte, key [16]byte) []byte {
-	block, _ := aes.NewCipher(key[:])
-	blockmode := cipher.NewCBCDecrypter(block, key[:])
-	blockmode.CryptBlocks(src, src)
-	src = unpadding(src)
-	return src
+func AesDecrypt(crypted []byte, key [16]byte) ([]byte, error) {
+	block, err := aes.NewCipher(key[:])
+	if err != nil {
+		return nil, err
+	}
+
+	blockSize := block.BlockSize()
+	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
+	origData := make([]byte, len(crypted))
+	blockMode.CryptBlocks(origData, crypted)
+	origData = PKCS5UnPadding(origData)
+	return origData, nil
 }

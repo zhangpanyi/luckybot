@@ -42,10 +42,19 @@ func makeErrorRespone(sessionID, reason string) []byte {
 		OK    bool   `json:"ok"`
 		Error string `json:"error"`
 	}{
-		OK:    true,
+		OK:    false,
 		Error: reason,
 	}
 	src, _ := json.Marshal(&respone)
 	data := authenticator.Encode(sessionID, src)
 	return data
+}
+
+// 允许跨域访问
+func allowAccessControl(w http.ResponseWriter) {
+	header := w.Header()
+	header.Add("Content-Type", "application/json")
+	header.Add("Access-Control-Allow-Origin", "*")
+	header.Add("Access-Control-Allow-Methods", "GET,POST")
+	header.Add("Access-Control-Allow-Headers", "Content-Type")
 }

@@ -24,6 +24,9 @@ type GetBalanceRespone struct {
 
 // 获取余额
 func GetBalance(w http.ResponseWriter, r *http.Request) {
+	// 跨域访问
+	allowAccessControl(w)
+
 	// 验证权限
 	sessionID, data, ok := authentication(r)
 	if !ok {
@@ -48,6 +51,13 @@ func GetBalance(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write(makeErrorRespone(sessionID, err.Error()))
 		return
+	}
+
+	if account == nil {
+		account = &models.Account{
+			Amount: big.NewFloat(0),
+			Locked: big.NewFloat(0),
+		}
 	}
 
 	respone := GetBalanceRespone{Amount: account.Amount, Locked: account.Locked}

@@ -21,6 +21,9 @@ type BroadcastRespone struct {
 
 // 广播消息
 func Broadcast(w http.ResponseWriter, r *http.Request) {
+	// 跨域访问
+	allowAccessControl(w)
+
 	// 验证权限
 	sessionID, data, ok := authentication(r)
 	if !ok {

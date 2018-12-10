@@ -293,7 +293,7 @@ func (handler *NewHandler) handleEnterNumber(bot *methods.BotExt, r *history.His
 	// 检查红包数量
 	serveCfg := config.GetServe()
 	number, err := strconv.Atoi(enterNumber)
-	if err != nil {
+	if err != nil || number <= 0 {
 		handlerError(fmt.Sprintf(tr(fromID, "lng_new_set_number_error"), minSingleAmount().String()))
 		return
 	}

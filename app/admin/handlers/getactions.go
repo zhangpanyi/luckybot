@@ -25,6 +25,9 @@ type GetActionsRespone struct {
 
 // 获取用户操作
 func GetActions(w http.ResponseWriter, r *http.Request) {
+	// 跨域访问
+	allowAccessControl(w)
+
 	// 验证权限
 	sessionID, data, ok := authentication(r)
 	if !ok {

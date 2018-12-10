@@ -97,11 +97,14 @@ var (
 // 			}
 //			"expired": true				// 红包是否过期
 // 		},
-//		"index": {						// 用户红包索引
-//			<user_id>: array
-//		},
 //		"mapping": {					// 红包编号映射
 //			<sn>: <sid>
+//		},
+//		"pending": {					// 用户挂起红包
+//			<user_id>: array
+//		},
+//		"history": {					// 用户历史红包
+//			<user_id>: array
 //		},
 //		"sequeue": 0,					// 红包ID生成序列
 //		"latest_expired": 0,		    // 最新过期红包ID
@@ -111,6 +114,124 @@ var (
 
 // 红包模型
 type LuckyMoneyModel struct {
+}
+
+// 生成序列号
+func (model *LuckyMoneyModel) generateSN(tx *bolt.Tx, id uint64) (string, error) {
+	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", "mapping")
+	if err != nil {
+		return "", err
+	}
+
+	sn := ""
+	token := make([]byte, 8)
+	for {
+		_, err = rand.Read(token)
+		if err != nil {
+			return "", err
+		}
+		sn = hex.EncodeToString(token)
+		if bucket.Get([]byte(token)) == nil {
+			sid := strconv.FormatUint(id, 10)
+			return sn, bucket.Put([]byte(sn), []byte(sid))
+		}
+	}
+}
+
+// 添加历史红包
+func (model *LuckyMoneyModel) moveToUserHistory(tx *bolt.Tx, usdeID int64, sid string) error {
+	sender := strconv.FormatInt(usdeID, 10)
+	pending, err := storage.GetBucketIfExists(tx, "luckymoney", "pending", sender)
+	if err != nil {
+		if err != storage.ErrNoBucket {
+			return err
+		}
+		return nil
+	}
+	if err = pending.Delete([]byte(sid)); err != nil {
+		return err
+	}
+
+	history, err := storage.EnsureBucketExists(tx, "luckymoney", "history", sender)
+	if err != nil {
+		if err != storage.ErrNoBucket {
+			return err
+		}
+		return nil
+	}
+	if err = history.Put([]byte(sid), []byte("#")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 创建领取记录
+func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyArr []*big.Float) (int, int, error) {
+
+	worstSeq, bestSeq := 0, 0
+	minValue, maxValue := big.NewFloat(math.MaxFloat64), big.NewFloat(0)
+	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid, "history")
+	if err != nil {
+		return 0, 0, err
+	}
+	for i := range luckyMoneyArr {
+		seq, err := bucket.NextSequence()
+		if err != nil {
+			return 0, 0, err
+		}
+
+		val := LuckyMoneyHistory{Value: luckyMoneyArr[i]}
+		jsb, err := json.Marshal(&val)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		sseq := strconv.FormatUint(seq, 10)
+		err = bucket.Put([]byte(sseq), jsb)
+		if err != nil {
+			return 0, 0, err
+		}
+
+		if luckyMoneyArr[i].Cmp(minValue) == -1 {
+			minValue = luckyMoneyArr[i]
+			worstSeq = int(seq)
+		}
+
+		if luckyMoneyArr[i].Cmp(maxValue) == 1 {
+			maxValue = luckyMoneyArr[i]
+			bestSeq = int(seq)
+		}
+	}
+	return worstSeq, bestSeq, nil
+}
+
+// 领取红包
+func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (*big.Float, error) {
+
+	bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "history")
+	if err != nil {
+		return nil, err
+	}
+
+	var history LuckyMoneyHistory
+	key := []byte(strconv.Itoa(seq))
+	jsb := bucket.Get(key)
+	if err = json.Unmarshal(jsb, &history); err != nil {
+		return nil, err
+	}
+	history.Normalization()
+	history.User = user
+
+	jsb, err = json.Marshal(&history)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = bucket.Put(key, jsb); err != nil {
+		return nil, err
+	}
+	return history.Value, nil
 }
 
 // 创建新红包
@@ -189,11 +310,11 @@ func (model *LuckyMoneyModel) NewLuckyMoney(data *LuckyMoney, luckyMoneyArr []*b
 
 		// 更新用户红包索引
 		key := strconv.FormatInt(data.SenderID, 10)
-		index, err := storage.EnsureBucketExists(tx, "luckymoney", "index", key)
+		pending, err := storage.EnsureBucketExists(tx, "luckymoney", "pending", key)
 		if err != nil {
 			return err
 		}
-		return index.Put([]byte(sid), []byte("#"))
+		return pending.Put([]byte(sid), []byte("#"))
 	})
 
 	if err != nil {
@@ -228,19 +349,11 @@ func (model *LuckyMoneyModel) SetExpired(id uint64) error {
 	if err != nil {
 		return nil
 	}
-	sender := strconv.FormatInt(luckyMoney.SenderID, 10)
 
 	sid := strconv.FormatUint(id, 10)
 	return storage.DB.Update(func(tx *bolt.Tx) error {
-		// 删除用户索引
-		index, err := storage.GetBucketIfExists(tx, "luckymoney", "index", sender)
-		if err != nil {
-			if err != storage.ErrNoBucket {
-				return err
-			}
-			return nil
-		}
-		if err = index.Delete([]byte(sid)); err != nil {
+		// 添加用户历史
+		if err = model.moveToUserHistory(tx, luckyMoney.SenderID, sid); err != nil {
 			return err
 		}
 
@@ -457,17 +570,9 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 			return err
 		}
 
-		// 删除用户索引
-		sender := strconv.FormatInt(base.SenderID, 10)
+		// 添加用户历史
 		if uint32(newSeq) >= base.Number {
-			index, err := storage.GetBucketIfExists(tx, "luckymoney", "index", sender)
-			if err != nil {
-				if err != storage.ErrNoBucket {
-					return err
-				}
-				return nil
-			}
-			if err = index.Delete([]byte(sid)); err != nil {
+			if err = model.moveToUserHistory(tx, base.SenderID, sid); err != nil {
 				return err
 			}
 		}
@@ -568,11 +673,16 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *L
 }
 
 // 筛选用户红包
-func (model *LuckyMoneyModel) FilterLuckyMoney(userID int64, offset, limit uint, reverse bool) ([]uint64, error) {
+func (model *LuckyMoneyModel) FilterLuckyMoney(userID int64, pending bool, offset, limit uint, reverse bool) ([]uint64, error) {
+	typ := "pending"
+	if !pending {
+		typ = "history"
+	}
 	ids := make([]uint64, 0)
 	key := strconv.FormatInt(userID, 10)
+
 	err := storage.DB.View(func(tx *bolt.Tx) error {
-		root, err := storage.GetBucketIfExists(tx, "luckymoney", "index")
+		root, err := storage.GetBucketIfExists(tx, "luckymoney", typ)
 		if err != nil {
 			if err != storage.ErrNoBucket {
 				return err
@@ -653,94 +763,4 @@ func (model *LuckyMoneyModel) ForeachLuckyMoney(startID uint64, callback func(*L
 		}
 		return nil
 	})
-}
-
-// 生成序列号
-func (model *LuckyMoneyModel) generateSN(tx *bolt.Tx, id uint64) (string, error) {
-	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", "mapping")
-	if err != nil {
-		return "", err
-	}
-
-	sn := ""
-	token := make([]byte, 8)
-	for {
-		_, err = rand.Read(token)
-		if err != nil {
-			return "", err
-		}
-		sn = hex.EncodeToString(token)
-		if bucket.Get([]byte(token)) == nil {
-			sid := strconv.FormatUint(id, 10)
-			return sn, bucket.Put([]byte(sn), []byte(sid))
-		}
-	}
-}
-
-// 创建领取记录
-func (model *LuckyMoneyModel) insertHistory(tx *bolt.Tx, sid string, luckyMoneyArr []*big.Float) (int, int, error) {
-
-	worstSeq, bestSeq := 0, 0
-	minValue, maxValue := big.NewFloat(math.MaxFloat64), big.NewFloat(0)
-	bucket, err := storage.EnsureBucketExists(tx, "luckymoney", sid, "history")
-	if err != nil {
-		return 0, 0, err
-	}
-	for i := range luckyMoneyArr {
-		seq, err := bucket.NextSequence()
-		if err != nil {
-			return 0, 0, err
-		}
-
-		val := LuckyMoneyHistory{Value: luckyMoneyArr[i]}
-		jsb, err := json.Marshal(&val)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		sseq := strconv.FormatUint(seq, 10)
-		err = bucket.Put([]byte(sseq), jsb)
-		if err != nil {
-			return 0, 0, err
-		}
-
-		if luckyMoneyArr[i].Cmp(minValue) == -1 {
-			minValue = luckyMoneyArr[i]
-			worstSeq = int(seq)
-		}
-
-		if luckyMoneyArr[i].Cmp(maxValue) == 1 {
-			maxValue = luckyMoneyArr[i]
-			bestSeq = int(seq)
-		}
-	}
-	return worstSeq, bestSeq, nil
-}
-
-// 领取红包
-func (model *LuckyMoneyModel) receiveLuckyMoney(tx *bolt.Tx, sid string, seq int, user *LuckyMoneyUser) (*big.Float, error) {
-
-	bucket, err := storage.GetBucketIfExists(tx, "luckymoney", sid, "history")
-	if err != nil {
-		return nil, err
-	}
-
-	var history LuckyMoneyHistory
-	key := []byte(strconv.Itoa(seq))
-	jsb := bucket.Get(key)
-	if err = json.Unmarshal(jsb, &history); err != nil {
-		return nil, err
-	}
-	history.Normalization()
-	history.User = user
-
-	jsb, err = json.Marshal(&history)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = bucket.Put(key, jsb); err != nil {
-		return nil, err
-	}
-	return history.Value, nil
 }
