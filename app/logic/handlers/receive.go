@@ -21,7 +21,7 @@ func ReplyLuckyMoneyInfo(bot *methods.BotExt, fromID int64, inlineMessageID stri
 	size := 0
 	users := make([]string, 0)
 	model := models.LuckyMoneyModel{}
-	history, err := model.GetHistory(luckyMoney.ID)
+	history, err := model.GetReceiveHistory(luckyMoney.ID)
 	if err != nil {
 		logger.Errorf("Failed to get lucky money history, %v", err)
 	}

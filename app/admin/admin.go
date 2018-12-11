@@ -20,5 +20,6 @@ func InitRoute(router *mux.Router) {
 		router.HandleFunc("/admin/broadcast", handlers.Broadcast)
 		router.HandleFunc("/admin/getactions", handlers.GetActions)
 		router.HandleFunc("/admin/subscribers", handlers.Subscribers)
+		router.HandleFunc("/admin/getluckymoney", handlers.GetLuckymoney)
 	})
 }

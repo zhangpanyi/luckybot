@@ -36,9 +36,9 @@ func replyLuckyMoneyList(bot *methods.BotExt, query *types.InlineQuery) {
 		return
 	}
 
-	// 筛选红包
+	// 获取红包集合
 	model := models.LuckyMoneyModel{}
-	ids, err := model.FilterLuckyMoney(query.From.ID, true, uint(offset), 5, true)
+	ids, _, err := model.Collection(query.From.ID, true, uint(offset), 5, true)
 	if err != nil || len(ids) == 0 {
 		replyNone(bot, query)
 		return

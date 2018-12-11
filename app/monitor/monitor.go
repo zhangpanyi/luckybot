@@ -32,7 +32,7 @@ func StartChecking(bot *methods.BotExt, pool *updater.Pool) {
 
 		// 遍历未过期列表
 		h := make(heapExpire, 0)
-		err = model.ForeachLuckyMoney(id+1, func(data *models.LuckyMoney) {
+		err = model.Foreach(id+1, func(data *models.LuckyMoney) {
 			heap.Push(&h, expire{ID: data.ID, Timestamp: data.Timestamp})
 		})
 		if err != nil && err != storage.ErrNoBucket {

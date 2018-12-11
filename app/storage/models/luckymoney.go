@@ -588,7 +588,7 @@ func (model *LuckyMoneyModel) ReceiveLuckyMoney(id uint64, userID int64, firstNa
 }
 
 // 获取领取历史
-func (model *LuckyMoneyModel) GetHistory(id uint64) ([]*LuckyMoneyHistory, error) {
+func (model *LuckyMoneyModel) GetReceiveHistory(id uint64) ([]*LuckyMoneyHistory, error) {
 	sid := strconv.FormatUint(id, 10)
 	array := make([]*LuckyMoneyHistory, 0)
 	err := storage.DB.View(func(tx *bolt.Tx) error {
@@ -672,15 +672,43 @@ func (model *LuckyMoneyModel) GetBestAndWorst(id uint64) (*LuckyMoneyHistory, *L
 	return &best, &worst, nil
 }
 
-// 筛选用户红包
-func (model *LuckyMoneyModel) FilterLuckyMoney(userID int64, pending bool, offset, limit uint, reverse bool) ([]uint64, error) {
+// 遍历红包列表
+func (model *LuckyMoneyModel) Foreach(startID uint64, callback func(*LuckyMoney)) error {
+	var base LuckyMoney
+	return storage.DB.View(func(tx *bolt.Tx) error {
+		rootBucket, err := storage.GetBucketIfExists(tx, "luckymoney")
+		if err != nil {
+			return err
+		}
+
+		cursor := rootBucket.Cursor()
+		seek := []byte(strconv.FormatUint(startID, 10))
+		for k, v := cursor.Seek(seek); k != nil && v == nil; k, v = cursor.Next() {
+			if bucket := rootBucket.Bucket(k); bucket != nil {
+				jsb := bucket.Get([]byte("base"))
+				if err = json.Unmarshal(jsb, &base); err != nil {
+					continue
+				}
+				base.Normalization()
+
+				if callback != nil {
+					callback(&base)
+				}
+			}
+		}
+		return nil
+	})
+}
+
+// 获取用户红包
+func (model *LuckyMoneyModel) Collection(userID int64, pending bool, offset, limit uint, reverse bool) ([]uint64, uint, error) {
+	var sum uint
 	typ := "pending"
 	if !pending {
 		typ = "history"
 	}
 	ids := make([]uint64, 0)
 	key := strconv.FormatInt(userID, 10)
-
 	err := storage.DB.View(func(tx *bolt.Tx) error {
 		root, err := storage.GetBucketIfExists(tx, "luckymoney", typ)
 		if err != nil {
@@ -692,6 +720,11 @@ func (model *LuckyMoneyModel) FilterLuckyMoney(userID int64, pending bool, offse
 
 		bucket := root.Bucket([]byte(key))
 		if bucket == nil {
+			return nil
+		}
+
+		sum = uint(bucket.Stats().KeyN)
+		if offset >= sum {
 			return nil
 		}
 
@@ -732,35 +765,7 @@ func (model *LuckyMoneyModel) FilterLuckyMoney(userID int64, pending bool, offse
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, sum, err
 	}
-	return ids, nil
-}
-
-// 遍历红包列表
-func (model *LuckyMoneyModel) ForeachLuckyMoney(startID uint64, callback func(*LuckyMoney)) error {
-	var base LuckyMoney
-	return storage.DB.View(func(tx *bolt.Tx) error {
-		rootBucket, err := storage.GetBucketIfExists(tx, "luckymoney")
-		if err != nil {
-			return err
-		}
-
-		cursor := rootBucket.Cursor()
-		seek := []byte(strconv.FormatUint(startID, 10))
-		for k, v := cursor.Seek(seek); k != nil && v == nil; k, v = cursor.Next() {
-			if bucket := rootBucket.Bucket(k); bucket != nil {
-				jsb := bucket.Get([]byte("base"))
-				if err = json.Unmarshal(jsb, &base); err != nil {
-					continue
-				}
-				base.Normalization()
-
-				if callback != nil {
-					callback(&base)
-				}
-			}
-		}
-		return nil
-	})
+	return ids, sum, nil
 }
