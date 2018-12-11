@@ -7,6 +7,12 @@ import (
 	"github.com/zhangpanyi/luckybot/app/storage/models"
 )
 
+// 红包信息
+type Luckymoney struct {
+	*models.LuckyMoney
+	Count uint32 `json:"count"`
+}
+
 // 获取红包请求
 type GetLuckymoneyRequest struct {
 	UserID int64 `json:"user_id"` // 用户ID
@@ -17,9 +23,9 @@ type GetLuckymoneyRequest struct {
 
 // 获取红包响应
 type GetLuckymoneyRespone struct {
-	Sum    int                  `json:"sum"`    // 动作总量
-	Count  int                  `json:"count"`  // 返回数量
-	Result []*models.LuckyMoney `json:"result"` // 红包列表
+	Sum    int           `json:"sum"`    // 动作总量
+	Count  int           `json:"count"`  // 返回数量
+	Result []*Luckymoney `json:"result"` // 红包列表
 }
 
 // 获取红包信息
@@ -73,15 +79,15 @@ func GetLuckymoney(w http.ResponseWriter, r *http.Request) {
 	idset := make([]uint64, len(ids)+len(historyIds))
 	copy(idset, ids)
 	copy(idset[len(ids):], historyIds)
-	result := make([]*models.LuckyMoney, 0, len(ids)+len(historyIds))
+	result := make([]*Luckymoney, 0, len(ids)+len(historyIds))
 	for i := 0; i < len(idset); i++ {
-		data, _, err := model.GetLuckyMoney(idset[i])
+		data, received, err := model.GetLuckyMoney(idset[i])
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			w.Write(makeErrorRespone(sessionID, err.Error()))
 			return
 		}
-		result = append(result, data)
+		result = append(result, &Luckymoney{LuckyMoney: data, Count: received})
 	}
 
 	// 序列化结果
