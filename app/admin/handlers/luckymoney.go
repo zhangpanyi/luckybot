@@ -70,7 +70,7 @@ func GetLuckymoney(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 获取红包数据
-	idset := make([]uint64, 0, len(ids)+len(historyIds))
+	idset := make([]uint64, len(ids)+len(historyIds))
 	copy(idset, ids)
 	copy(idset[len(ids):], historyIds)
 	result := make([]*models.LuckyMoney, 0, len(ids)+len(historyIds))
@@ -85,7 +85,7 @@ func GetLuckymoney(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 序列化结果
-	respone := GetLuckymoneyRespone{Sum: int(sum + historySum), Count: len(result), Result: nil}
+	respone := GetLuckymoneyRespone{Sum: int(sum + historySum), Count: len(result), Result: result}
 	jsb, err := json.Marshal(respone)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

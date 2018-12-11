@@ -21,8 +21,8 @@ const DefaultLuckyMoneyID = 100000
 type LuckyMoney struct {
 	ID         uint64     `json:"id"`          // 红包ID
 	SN         string     `json:"sn"`          // 唯一编号
-	SenderID   int64      `json:"sneder_id"`   // 发送者
-	SenderName string     `json:"sneder_name"` // 发送者名字
+	SenderID   int64      `json:"sender_id"`   // 发送者
+	SenderName string     `json:"sender_name"` // 发送者名字
 	Asset      string     `json:"asset"`       // 资产类型
 	Amount     *big.Float `json:"amount"`      // 红包金额
 	Received   *big.Float `json:"received"`    // 领取金额
