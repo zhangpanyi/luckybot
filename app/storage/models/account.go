@@ -13,9 +13,10 @@ import (
 
 // 账户数据
 type Account struct {
-	Symbol string     `json:"symbol"` // 货币符号
-	Amount *big.Float `json:"amount"` // 资产金额
-	Locked *big.Float `json:"locked"` // 锁定金额
+	Symbol  string     `json:"symbol"`  // 货币符号
+	Amount  *big.Float `json:"amount"`  // 资产金额
+	Locked  *big.Float `json:"locked"`  // 锁定金额
+	Disable bool       `json:"disable"` // 禁用账户
 }
 
 // 标准化
