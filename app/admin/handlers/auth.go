@@ -129,8 +129,6 @@ func (a *Authenticator) Auth(ip string, data []byte) (string, bool) {
 		return "", false
 	}
 
-	code = "123456"
-
 	key := a.getKey(code)
 	src, ok := msg.Decode(key)
 	if !ok {
