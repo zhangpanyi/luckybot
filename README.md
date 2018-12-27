@@ -150,3 +150,13 @@ function parse(json : string) -> table, string
 此函数用于将JSON 字符串解析为 `table`。返回值一为解析成功的 `table`，返回值二为错误信息。
 
 # 管理后台
+
+[luckybot-management](https://github.com/zhangpanyi/luckybot-management) 使用 [Vue.js](https://cn.vuejs.org/) 编写的单页面网站。通过 `luckybot` 服务提供的 RESTful API 查询和管理用户信息。`luckybot-management` 默认使用 http://127.0.0.1:18127
+ 作为端点，如需修改请自行搜索编辑。
+
+
+**快速启动：**
+```
+cd admin
+python -m SimpleHTTPServer 8080
+```
