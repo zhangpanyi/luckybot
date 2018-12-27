@@ -2,7 +2,7 @@
 host: 0.0.0.0
 
 # 端口号
-port: 18080
+port: 18127
 
 # 语言包路径
 languages: "lang"
