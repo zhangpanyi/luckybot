@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
-	"github.com/zhangpanyi/luckybot/app/fmath"
-	"github.com/zhangpanyi/luckybot/app/storage"
+	"luckybot/app/fmath"
+	"luckybot/app/storage"
 )
 
 // 触发原因

@@ -9,10 +9,10 @@ import (
 	"strconv"
 
 	"github.com/zhangpanyi/basebot/logger"
-	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
-	"github.com/zhangpanyi/luckybot/app/logic/pusher"
-	"github.com/zhangpanyi/luckybot/app/logic/scriptengine"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/logic/handlers/utils"
+	"luckybot/app/logic/pusher"
+	"luckybot/app/logic/scriptengine"
+	"luckybot/app/storage/models"
 )
 
 // 充值请求

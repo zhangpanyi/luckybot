@@ -15,28 +15,21 @@ luckybot 是使用 [Golang](https://golang.org/) 语言开发的通用 [Telegram
 # 快速开始
 ### 1. 拉取代码
 ```bash
-git clone https://github.com/zhangpanyi/luckybot.git
+git clone https://luckybot.git
 ```
 
-### 2. 安装依赖
-```bash
-go get -u github.com/Masterminds/glide
-glide install
-```
-> 如果无法翻墙请将 `.glide` 文件夹拷贝到 `%HOME%` 目录
-
-### 3. 编译程序
+### 2. 编译程序
 ```bash
 go build
 ```
 
-### 4. 初始配置
+### 3. 初始配置
 ```bash
 python init_config.py
 ```
 Telegram 机器人必须开启 [Inline mode](https://core.telegram.org/bots/inline) ，再将 server.yml 配置文件中 **token** 字段的值填写为你 Telegram 机器人 Token。 
 
-### 5. 运行服务
+### 4. 运行服务
 
 **Linux**
 
@@ -151,7 +144,7 @@ function parse(json : string) -> table, string
 
 # 管理后台
 
-[luckybot-management](https://github.com/zhangpanyi/luckybot-management) 使用 [Vue.js](https://cn.vuejs.org/) 编写的单页面网站。通过 `luckybot` 服务提供的 RESTful API 查询和管理用户信息。`luckybot-management` 默认使用 http://127.0.0.1:18127
+[luckybot-management](https://luckybot-management) 使用 [Vue.js](https://cn.vuejs.org/) 编写的单页面网站。通过 `luckybot` 服务提供的 RESTful API 查询和管理用户信息。`luckybot-management` 默认使用 http://127.0.0.1:18127
  作为端点，如需修改请自行搜索编辑。
 
 

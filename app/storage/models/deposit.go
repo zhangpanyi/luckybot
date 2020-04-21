@@ -4,7 +4,7 @@ import (
 	"errors"
 
 	"github.com/boltdb/bolt"
-	"github.com/zhangpanyi/luckybot/app/storage"
+	"luckybot/app/storage"
 )
 
 // 充值模型

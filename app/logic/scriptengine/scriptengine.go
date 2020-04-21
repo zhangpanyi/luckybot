@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/zhangpanyi/basebot/logger"
-	"github.com/zhangpanyi/luckybot/app/luaglue"
+	"luckybot/app/luaglue"
 )
 
 var once sync.Once

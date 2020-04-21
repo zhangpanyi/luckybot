@@ -8,9 +8,9 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/storage"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/config"
+	"luckybot/app/storage"
+	"luckybot/app/storage/models"
 )
 
 // 回复红包信息

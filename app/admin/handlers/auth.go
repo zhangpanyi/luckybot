@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/pquerna/otp/totp"
-	"github.com/zhangpanyi/luckybot/app/admin/crypto"
-	"github.com/zhangpanyi/luckybot/app/config"
+	"luckybot/app/admin/crypto"
+	"luckybot/app/config"
 )
 
 var once sync.Once

@@ -10,8 +10,8 @@ import (
 	"strconv"
 
 	"github.com/boltdb/bolt"
-	"github.com/zhangpanyi/luckybot/app/fmath"
-	"github.com/zhangpanyi/luckybot/app/storage"
+	"luckybot/app/fmath"
+	"luckybot/app/storage"
 )
 
 // 默认红包ID

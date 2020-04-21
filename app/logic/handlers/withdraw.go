@@ -11,11 +11,11 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/fmath"
-	"github.com/zhangpanyi/luckybot/app/future"
-	"github.com/zhangpanyi/luckybot/app/logic/scriptengine"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/config"
+	"luckybot/app/fmath"
+	"luckybot/app/future"
+	"luckybot/app/logic/scriptengine"
+	"luckybot/app/storage/models"
 )
 
 // 匹配金额

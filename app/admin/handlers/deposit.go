@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/fmath"
-	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
-	"github.com/zhangpanyi/luckybot/app/logic/pusher"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/config"
+	"luckybot/app/fmath"
+	"luckybot/app/logic/handlers/utils"
+	"luckybot/app/logic/pusher"
+	"luckybot/app/storage/models"
 )
 
 // 充值请求

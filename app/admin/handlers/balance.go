@@ -5,9 +5,9 @@ import (
 	"math/big"
 	"net/http"
 
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/storage"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/config"
+	"luckybot/app/storage"
+	"luckybot/app/storage/models"
 )
 
 // 获取余额请求
