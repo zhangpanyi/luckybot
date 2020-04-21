@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	lua "github.com/yuin/gopher-lua"
-	"github.com/zhangpanyi/luckybot/app/future"
+	"luckybot/app/future"
 )
 
 // 创建Future

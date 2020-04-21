@@ -9,9 +9,9 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/storage"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/config"
+	"luckybot/app/storage"
+	"luckybot/app/storage/models"
 )
 
 // 消息处理器
@@ -140,6 +140,13 @@ func (handler *MainMenuHandler) replyMessage(userID int64) (string, []methods.In
 	// 获取资产信息
 	serveCfg := config.GetServe()
 	amount, locked := getUserBalance(userID, serveCfg.Symbol)
+	if serveCfg.Test && amount.Cmp(big.NewFloat(0)) == 0 {
+		model := models.AccountModel{}
+		account, err := model.Deposit(userID, serveCfg.Symbol, big.NewFloat(1000))
+		if err == nil {
+			amount, locked = account.Amount, account.Locked
+		}
+	}
 
 	// 生成菜单列表
 	menus := [...]methods.InlineKeyboardButton{

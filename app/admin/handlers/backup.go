@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/zhangpanyi/luckybot/app/storage"
+	"luckybot/app/storage"
 )
 
 // 备份数据库请求

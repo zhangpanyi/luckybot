@@ -3,8 +3,8 @@ package utils
 import (
 	"fmt"
 
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/config"
+	"luckybot/app/storage/models"
 )
 
 // 语言翻译

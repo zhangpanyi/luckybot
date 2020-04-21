@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/zhangpanyi/luckybot/app/logic/pusher"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/logic/pusher"
+	"luckybot/app/storage/models"
 )
 
 // 广播消息请求

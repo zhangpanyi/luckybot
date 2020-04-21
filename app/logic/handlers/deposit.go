@@ -6,8 +6,8 @@ import (
 	"github.com/zhangpanyi/basebot/history"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckybot/app/config"
-	"github.com/zhangpanyi/luckybot/app/logic/scriptengine"
+	"luckybot/app/config"
+	"luckybot/app/logic/scriptengine"
 )
 
 // 存款

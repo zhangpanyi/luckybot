@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/zhangpanyi/basebot/logger"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/storage/models"
 )
 
 // 获取动作请求

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/storage/models"
 )
 
 // 红包信息

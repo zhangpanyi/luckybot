@@ -10,9 +10,9 @@ import (
 	"github.com/zhangpanyi/basebot/logger"
 	"github.com/zhangpanyi/basebot/telegram/methods"
 	"github.com/zhangpanyi/basebot/telegram/types"
-	"github.com/zhangpanyi/luckybot/app/location"
-	"github.com/zhangpanyi/luckybot/app/logic/handlers/utils"
-	"github.com/zhangpanyi/luckybot/app/storage/models"
+	"luckybot/app/location"
+	"luckybot/app/logic/handlers/utils"
+	"luckybot/app/storage/models"
 )
 
 // 每页条目
